@@ -1,129 +1,102 @@
-# Mechanism recovery — a reproducible negative result (supplementary)
+# Mechanism & fluctuation-response probes — two negatives, one positive (supplementary)
 
-Two self-contained, CPU-only synthetic spikes testing a question the "Mechanisms Matter"
-(Qi & Chapfuwa) line raises: does an **explicitly-estimated per-context causal influence matrix
-`Â_C`** predict cross-context perturbation transportability **better than correlation baselines**?
-Ground truth is known by construction, so the question is answerable cleanly. It is answered here,
-and the answer is a well-characterized **negative** — which is the contribution.
+Three self-contained, CPU-only synthetic probes on the "Mechanisms Matter" (Qi & Chapfuwa) /
+CIPHER line, each proven on ground truth where the answer is known. The arc:
 
----
+1. **Probe #1 (linear, single held-out perturbations)** — does an explicitly-estimated per-context
+   causal matrix `Â_C` beat correlation baselines at cross-context transportability? → **FAIL**.
+2. **Probe #2 (nonlinear, held-out doubles)** — does nonlinearity/epistasis let `Â_C` overtake
+   correlation? → **FAIL / PARK**.
+3. **Probe #3, the C-NL gate (third moment)** — does the *baseline third moment* predict the
+   perturbation response that covariance provably cannot? → **LIVE** (the positive).
 
-## Three takeaways
-
-**1. The result — `Â` does not beat correlation, in either regime tested.**
-On the field's own simulator (CausalDGP), explicit per-context `Â_C` estimation fails to beat
-correlation/additivity at predicting cross-context transportability, in **both** regimes we tested:
-linear dynamics with single-gene held-out perturbations (spike #1) and nonlinear dynamics with
-held-out double perturbations (spike #2). The pre-registered bar (mechanism must exceed *both*
-correlation nulls with the gap CI excluding 0) is **not met → FAIL**, reported honestly.
-
-| | Spike #1 (linear, singles) | Spike #2 (nonlinear, doubles) |
-|---|---|---|
-| best mechanism | AUROC **0.69** | mech−corr gap **≈ 0 across all λ** |
-| best correlation null | AUROC **0.83** | (gap −0.003 → −0.001, CIs span 0) |
-| oracle (true `A`) | **1.00** | linear-oracle 1.00 → 0.88 |
-| verdict | FAIL | FAIL / PARK |
-
-**2. Why — the positive core (this is the finding).**
-In a linear-Gaussian OU system the stationary covariance solves the Lyapunov equation
-`A Σ + Σ Aᵀ = −D`, so **`Σ` is a near-sufficient statistic for `A`**: correlation captures the
-mechanism essentially for free, and *more stably* than a sparse interventional estimate under
-`P≪G`. It even sharpens **faster with sequencing depth** than the mechanism (correlation
-0.72→0.96 over 500→4000 cells; mechanism flat ~0.70). And **nonlinearity does not relax this**:
-the estimator's ~20% `Â`-error swamps the ~18% epistasis signal it is meant to exploit — summing
-*observed* singles predicts an epistatic double's effect at cosine ~0.98 while the mechanism reaches
-only ~0.65. This is a concrete explanation for *why the field's correlation baselines are so hard to
-beat, on the field's own simulator*.
-
-**3. A standalone positive — the linear transportability condition degrades under nonlinearity.**
-The linear/additive transportability condition (`τ = −A⁻¹Γ`, operating-point-blind) holds AUROC
-**1.00** through moderate nonlinearity but falls to **0.88** under strong saturation (λ=0.85),
-quantifying how far the field's linear assumption drifts from truth as biology becomes nonlinear.
+The through-line: in a linear-Gaussian system the control covariance solves the Lyapunov equation, so
+`Σ` is a near-sufficient statistic for the mechanism — which is *why* correlation baselines are
+unbeatable (#1–#2). The one thing covariance cannot carry is the non-Gaussian (third-moment) structure
+of the fluctuations — and that is exactly where #3 found real, estimable signal.
 
 ---
 
-## Spike #1 — linear regime, single-gene held-out perturbations
+## Probe #1 — mechanism recovery, linear regime → FAIL
 
-Linear-Gaussian CausalDGP (OU latent + NB emission), `G=50`, `P_train=30`, held-out singles perturbed
-in *neither* context, modes {none, a, b, both}, 8 seeds. Held-out = never-perturbed genes, so the
-mechanism must extrapolate.
+`G=50`, `P_train=30`, held-out singles, 4 modes, 8 seeds.
 
 | Method | Pooled AUROC [95% CI] |
 |---|---|
-| Oracle (true `A` columns) — *reference* | **1.000** |
+| Oracle (true `A` columns) | **1.000** |
 | Null: correlation graph | **0.828** [0.757, 0.889] |
 | Null: co-expression (GEARS) | 0.702 [0.647, 0.748] |
-| **Mechanism — `Â` column-k (best variant)** | **0.689** [0.640, 0.732] |
-| Mechanism — brief inversion predictor | 0.624 [0.549, 0.695] |
+| **Mechanism (column-k, best)** | **0.689** [0.640, 0.732] |
 
-`gap(mechanism − corr_null) = −0.140 [−0.224, −0.053]` (CI excludes 0, wrong direction) → FAIL.
-Artifacts: [`results/c4_auroc.csv`](results/c4_auroc.csv), [`results/moneyshot.png`](results/moneyshot.png),
-[`results/sensitivity_ncells.png`](results/sensitivity_ncells.png) (depth sensitivity), full write-up in
-[`FINDINGS.md`](FINDINGS.md).
+`gap(mech − corr) = −0.140 [−0.224, −0.053]` → FAIL. Oracle=1.0 ⇒ signal real, `Â`-estimation under
+P≪G is the wall; correlation sharpens *faster* with depth (0.72→0.96). Details: [`FINDINGS.md`](FINDINGS.md),
+`results/{c4_auroc.csv, moneyshot.png, sensitivity_ncells.png}`.
 
-## Spike #2 — nonlinear regime, held-out double perturbations
+## Probe #2 — mechanism recovery, nonlinear regime (doubles) → FAIL / PARK
 
-Nonlinear drift `h_λ(x)=(1−λ)x+λ·s·tanh(x/s)` (λ=0 recovers the linear system); test = held-out
-doubles of *individually-perturbed* genes (fixes spike-1's coverage gap and introduces epistasis).
-The hypothesis was that nonlinearity would dissolve correlation's two advantages. It does not.
+`h_λ(x)=(1−λ)x+λ·s·tanh(x/s)`, held-out doubles of individually-perturbed genes.
 
-| λ | epistasis (rel) | frac transportable | mechanism | corr-add | obs-add | linear oracle | gap (mech−corr) |
-|---|---|---|---|---|---|---|---|
-| 0.00 | 0.00 | 0.50 | 0.997 | 1.000 | 1.000 | 1.000 | −0.003 |
-| 0.50 | 0.06 | 0.50 | 0.988 | 0.998 | 1.000 | 1.000 | −0.010 |
-| 0.85 | 0.18 | 0.30 | 0.982 | 0.983 | 0.999 | 0.876 | −0.001 |
-| 1.00 | — | — | — | — | — | — | degenerate (dropped) |
+| λ | epistasis | mechanism | corr-add | obs-add | linear oracle | gap |
+|---|---|---|---|---|---|---|
+| 0.00 | 0.00 | 0.997 | 1.000 | 1.000 | 1.000 | −0.003 |
+| 0.85 | 0.18 | 0.982 | 0.983 | 0.999 | 0.876 | −0.001 |
 
-The gap never crosses zero; the finer Spearman metric trends the *wrong* way (+0.02 → −0.03). The
-manipulation is real (epistasis 0→0.18, transportable fraction 0.50→0.30). Artifacts:
-[`results/gap_vs_lambda.png`](results/gap_vs_lambda.png), [`results/spike2_diagnostics.csv`](results/spike2_diagnostics.csv),
-full write-up in [`FINDINGS_SPIKE2.md`](FINDINGS_SPIKE2.md).
+Gap stays flat across λ; summing *observed* singles predicts the epistatic double at cos 0.98 while the
+mechanism reaches 0.65. Standalone positive: the linear transportability condition degrades AUROC
+1.00→0.88 under nonlinearity. Details: [`FINDINGS_SPIKE2.md`](FINDINGS_SPIKE2.md),
+`results/{gap_vs_lambda.png, spike2_diagnostics.csv}`.
+
+## Probe #3 — the C-NL gate (third moment) → LIVE
+
+Symmetric (equilibrium) `A` so CIPHER's `Σu` is the exact first-order response (σ²=2 ⇒ `Σ=−A⁻¹`,
+clean λ=0), genuine nonlinear-SDE Euler–Maruyama sampling (needed for a nonzero third moment), nonzero
+baseline `b` (else the odd `tanh` gives a symmetric law with zero third moment). Pure second-order
+response `c_ik = [Δμ_i(+m e_k)+Δμ_i(−m e_k)]/(2m²)`.
+
+| λ | R²_T | R²_cov | ΔR² [95% CI] |
+|---|---|---|---|
+| 0.00 | 0.00 | 0.00 | −0.000 [−0.002, +0.000] |
+| 0.50 | 0.73 | 0.00 | **+0.733** [+0.673, +0.772] |
+| 0.85 | 0.76 | 0.01 | **+0.749** [+0.640, +0.802] |
+
+The baseline third moment `T_ikk` explains ~61–76% of the second-order response; the covariance
+surrogate `Σ_ik²` explains ~0%. **Test 3**: survives to 1,000 control cells (latent ΔR² 0.75→0.61;
+NB-emission-on 0.25→0.19 — emission costs ~2/3 of the signal but holds). **Honest caveats**: the
+nonlinear term is *small* (~3–4% of the response — prediction is strong, magnitude on real data is a
+separate sizing question); the gate is equilibrium-only (necessary-not-sufficient for real non-equilibrium
+networks); it is a *response* predictor, **not** causation (does not resurrect `Â_C`). Details:
+[`FINDINGS_CNL.md`](FINDINGS_CNL.md), `results/{delta_r2_vs_lambda.png, depth_threshold.png}`.
+
+**Provenance discipline** (kept throughout `FINDINGS_CNL.md`): the third-moment link is an *inference*
+from fluctuation-response theory, **never** attributed to CIPHER; the coefficient is *fit*, not assumed ½.
 
 ---
 
-## Reproduce (CPU-only, minutes; no GPU, no torch)
+## Reproduce (CPU-only, no GPU, no torch)
 
 ```bash
-conda env create -f environment.yml    # or: pip install numpy scipy scikit-learn pandas matplotlib
-python run_c4.py && python eval.py && python sensitivity.py     # spike #1  -> results/c4_auroc.csv, moneyshot.png, sensitivity_ncells.*
-python run_spike2.py && python spike2_diag.py                   # spike #2  -> results/gap_vs_lambda.*, spike2_diagnostics.csv
+conda env create -f environment.yml
+python run_c4.py && python eval.py && python sensitivity.py     # probe #1
+python run_spike2.py && python spike2_diag.py                   # probe #2
+python run_cnl_gate.py                                          # probe #3 (C-NL); `quick` for a fast read
 ```
 
-Seeds are fixed; runs are deterministic and regenerate every committed artifact. `run_c4.py` prints the
-**M0 simulator check** (empirical vs analytic effect, Pearson `r ≈ 0.96`) — if that fails, nothing
-downstream is valid. Raw per-record CSVs (`*_records.csv`) are regenerated by the run commands and are
-git-ignored; the curated artifacts in `results/` are committed.
+Seeds fixed; deterministic; regenerates every committed artifact. Raw per-record CSVs are git-ignored;
+curated `results/` artifacts are committed.
 
 ### Files
 
 | file | role |
 |---|---|
-| `causaldgp.py` | simulator: linear OU + NB emission (spike 1); nonlinear drift + fixed-point solver (spike 2) |
-| `mechanism.py` | interventional estimator `estimate_A` + predictors + nulls; nonlinear double-predictor + additive nulls |
-| `labels.py` | analytic transportability ground truth (Prop 1); nonlinear label + linear oracle |
-| `run_c4.py` / `eval.py` / `sensitivity.py` | spike 1: M0 check + sweep, AUROC + bootstrap CIs, depth sensitivity |
-| `run_spike2.py` / `spike2_diag.py` | spike 2: kill probe + λ grid, Spearman + effect-capture diagnostics |
+| `causaldgp.py` | simulator: linear OU + NB emission (#1); nonlinear drift + fixed points (#2); symmetric `A` + nonlinear-SDE Euler–Maruyama sampler (#3) |
+| `mechanism.py` / `labels.py` | estimators, nulls, and analytic labels for #1–#2 |
+| `response.py` | #3: third moment `T`, `second_order_term`, covariance surrogate, ΔR² |
+| `run_c4.py` / `eval.py` / `sensitivity.py` | probe #1 |
+| `run_spike2.py` / `spike2_diag.py` | probe #2 |
+| `run_cnl_gate.py` | probe #3 (Tests 1–3) |
 
-### Documented in-source (methodological, not tuned on labels)
+## Scope guard
 
-- **Lyapunov `−D` sign fix** — `solve_lyapunov(A, D)` returns a negative-definite covariance for Hurwitz
-  `A`; the valid covariance needs `−D`.
-- **Principled (non-inversion) predictor** — the naïve `solve(Â+ridge·I, −Γ)` sign-flips held-out effects
-  (rank-deficient `Â`); replaced with the estimable causal-target column / identity-fill predictor.
-- **`α = 0.002`, `n_cells = 1000`** — chosen on a *disjoint dev-seed set* by maximizing label-independent
-  `A`-recovery (not any mechanism-vs-null gap).
-- **Spike-2 `s = 0.4`** (not the illustrative 1.5) — a manipulation check showed 1.5 leaves the small
-  operating point (`|x*|≈0.24`) in tanh's linear zone → ~0 epistasis → a *false* PARK; `s=0.4` yields a
-  clean epistasis gradient while staying stable through λ=0.85.
-
----
-
-## Scope & future work (honest)
-
-Results are **synthetic-only**. The transportability signal is **real** (oracle with the true `A`
-scores AUROC 1.0), but recovering it is **estimation-gated under `P≪G`**, and neither linearity nor
-nonlinearity relaxes that gate. The one lever we did **not** test is a **materially better estimator**
-— e.g. a joint sparse + low-rank `Â`, or estimating the effect map `B = −A⁻¹` directly from observed
-effect columns rather than inverting a sparse `Â`. That is a research direction, not a hackathon task,
-and it is out of scope here. Also out of scope by rule: real ZHU25 data, the A/B mechanism
-decomposition, and any acquisition/decision layer.
+Out of scope by rule (all probes): real ZHU25 data, the A/B decomposition, acquisition, and — for #3 —
+the real-data build (closed-form `Σu + c·T[u,u]`, low-rank `T`) and the analytic-½ derivation. Those are
+gated on these results and are the project lead's call.

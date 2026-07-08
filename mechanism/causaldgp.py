@@ -230,3 +230,73 @@ def true_effect_nl(A, b, gamma, lam, s=1.5):
 def latent_cells(x_star, Sigma, n_cells, rng):
     """Draw n_cells latent cells ~ N(x*, Sigma) (the spike-2 'emission')."""
     return rng.multivariate_normal(x_star, Sigma, size=n_cells)
+
+
+# ===========================================================================
+# C-NL GATE -- symmetric (equilibrium) A + genuine nonlinear-SDE sampling
+# ---------------------------------------------------------------------------
+# The third-moment gate needs the TRUE non-Gaussian stationary distribution, so we integrate the
+# nonlinear SDE  dx = (A h_lambda(x) + b + gamma) dt + sigma dW  by Euler-Maruyama (the spike-2
+# Gaussian local-cov sampler has zero third moment by construction and is useless here).
+#
+# SIGMA_GATE = sqrt(2): with a SYMMETRIC Hurwitz A the linear stationary covariance is
+# Sigma = -(sigma^2/2) A^{-1}, so sigma^2 = 2 gives Sigma = -A^{-1} and the CIPHER first-order
+# response Sigma u equals the true response Delta_mu = -A^{-1} u EXACTLY at lambda=0 (clean M0).
+# ===========================================================================
+SIGMA_GATE = np.sqrt(2.0)
+
+
+def make_A_symmetric(G, n_reg, rng, margin=1.0):
+    """Symmetric (equilibrium/gradient) influence matrix so CIPHER's Sigma u is the EXACT first-order
+    response. With a non-symmetric A, Sigma u != -A^{-1} u even at lambda=0 -> a linear residual that
+    would confound the gate (Test 1 fails spuriously, Test 2 fits the artifact)."""
+    W = np.zeros((G, G))
+    for i in range(G):
+        regs = rng.choice([j for j in range(G) if j != i], size=n_reg, replace=False)
+        W[i, regs] = rng.choice([-1.0, 1.0], n_reg) * rng.uniform(1.0, 3.0, n_reg)
+    W = 0.5 * (W + W.T)                                    # symmetrize -> gradient dynamics
+    lam = np.max(np.real(np.linalg.eigvals(W)))
+    return W - (lam + margin) * np.eye(G)                 # symmetric, Hurwitz (neg. definite)
+
+
+def em_sample_latent(A, b, gamma, lam, n_cells, rng, sigma=SIGMA_GATE, s=0.4, dt=0.02, n_steps=500):
+    """Euler-Maruyama samples of the stationary latent distribution (independent chains started at the
+    deterministic fixed point). Returns (n_cells, G). At lambda>0 this carries genuine non-Gaussian
+    structure (nonzero third moment); at lambda=0 it is Gaussian."""
+    G = A.shape[0]
+    x0, _ = fixed_point(A, b, gamma, lam, s=s)
+    x = np.tile(x0.astype(float), (n_cells, 1))
+    At = A.T
+    rhs = b + gamma
+    sq = sigma * np.sqrt(dt)
+    for _ in range(n_steps):
+        x = x + (h_lambda(x, lam, s) @ At + rhs) * dt + sq * rng.standard_normal((n_cells, G))
+    return x
+
+
+def em_perturb_responses(A, b, U, lam, n_cells, rng, sigma=SIGMA_GATE, s=0.4, dt=0.02, n_steps=500):
+    """Ground-truth perturbation-mean responses Delta_mu_q = <x>_{gamma=u_q} - <x>_0 for each row u_q
+    of U (P, G), via COMMON RANDOM NUMBERS (all systems driven by the same noise) so the difference is
+    low-variance. Returns (P, G)."""
+    G = A.shape[0]
+    P = U.shape[0]
+    gammas = np.vstack([np.zeros(G), U])                              # (P+1, G): 0 = control
+    x = np.stack([np.tile(fixed_point(A, b, gammas[q], lam, s=s)[0].astype(float), (n_cells, 1))
+                  for q in range(P + 1)])                             # (P+1, n_cells, G)
+    At = A.T
+    sq = sigma * np.sqrt(dt)
+    for _ in range(n_steps):
+        xi = rng.standard_normal((n_cells, G))                       # shared noise (CRN)
+        x = x + (h_lambda(x, lam, s) @ At + (b[None, None, :] + gammas[:, None, :])) * dt + sq * xi[None, :, :]
+    means = x.mean(1)                                                # (P+1, G)
+    return means[1:] - means[0:1]                                    # (P, G)
+
+
+def emit_from_latent(x_latent, rng, theta=5.0, libsize=1e4, offset=0.0):
+    """Apply the spike-1 NB emission to GIVEN latent cells (for Test 3's realistic-observation depth
+    sweep): softplus link -> compositional -> Gamma-Poisson. Returns integer counts (same shape)."""
+    rate = np.log1p(np.exp(x_latent + offset))
+    p = rate / rate.sum(1, keepdims=True)
+    lam_ct = p * libsize
+    g = rng.gamma(theta, lam_ct / theta)
+    return rng.poisson(g)
