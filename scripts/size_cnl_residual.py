@@ -97,80 +97,68 @@ def _chunked_cov(chunk_iter, n_genes, shrink=0.0):
 # ---------------------------------------------------------------------------
 # Sigma_c source 1: labeled single-cell h5ads (EXACT)
 # ---------------------------------------------------------------------------
-def _canon_strata_and_control(obs, path):
-    """Return (is_control mask, donor array, condition array) for raw single-cell obs.
-    Controls via guide_type ~ non+target (CZI convention); donor/condition from obs if present else
-    parsed from the filename (assigned_guide files encode donor_N / condition in the name)."""
-    obs = obs.copy()
+def _file_stratum(path):
+    """(canon donor, canon condition) parsed from an assigned_guide filename like
+    'D1_Stim8hr.assigned_guide.h5ad' -> ('donor_1','Stim8hr'). Filename is preferred over raw obs
+    because obs donor_id may be a raw CZI code (CE0008162) that _canon_donor maps to a label which
+    does NOT match the pseudobulk's donor_1..N (built via a sorted czi_donor_map) -> empty join."""
+    fname = Path(path).name
+    dm = re.search(r"(D\d+|donor[_-]?\d+)", fname, re.IGNORECASE)
+    cm = re.search(r"(Rest|Stim48hr|Stim8hr)", fname, re.IGNORECASE)  # longer alt first
+    return (_canon_donor(dm.group(1)) if dm else None,
+            _canon_condition(cm.group(1)) if cm else None)
+
+
+def _control_mask(obs, path):
+    """Boolean mask of non-targeting control cells from raw single-cell obs."""
     cols = {c.lower(): c for c in obs.columns}
-    # control mask
     if "guide_type" in cols:
         gt = obs[cols["guide_type"]].astype(str).str.lower()
-        is_ctrl = (gt.str.contains("non") & gt.str.contains("target")).to_numpy()
-    elif "pert_id" in cols:
-        is_ctrl = (obs[cols["pert_id"]].astype(str) == C.CONTROL_PERT_ID).to_numpy()
-    else:
-        raise KeyError(f"{path}: obs has neither 'guide_type' nor 'pert_id' to identify controls")
-    # donor / condition
-    fname = Path(path).name
-    dcol = next((cols[c] for c in ("donor", "donor_id", "individual") if c in cols), None)
-    ccol = next((cols[c] for c in ("condition", "culture_condition", "activation") if c in cols), None)
-    donor = (np.array([_canon_donor(v) for v in obs[dcol]]) if dcol
-             else _from_filename(fname, r"(donor[_-]?\d+)", "donor"))
-    cond = (np.array([_canon_condition(v) for v in obs[ccol]]) if ccol
-            else _from_filename(fname, r"(Rest|Stim8hr|Stim48hr)", "condition"))
-    if np.ndim(donor) == 0:
-        donor = np.full(len(obs), str(donor))
-    if np.ndim(cond) == 0:
-        cond = np.full(len(obs), str(cond))
-    return is_ctrl, donor, cond
-
-
-def _from_filename(fname, pattern, what):
-    m = re.search(pattern, fname, re.IGNORECASE)
-    if not m:
-        raise ValueError(f"cannot resolve {what} for {fname}: no obs column and no filename token "
-                         f"matching /{pattern}/. Rename files as ..._donor_1_Stim8hr... or add obs.")
-    return _canon_donor(m.group(1)) if what == "donor" else _canon_condition(m.group(1))
+        return (gt.str.contains("non") & gt.str.contains("target")).to_numpy()
+    if "pert_id" in cols:
+        return (obs[cols["pert_id"]].astype(str) == C.CONTROL_PERT_ID).to_numpy()
+    raise KeyError(f"{path}: obs has neither 'guide_type' nor 'pert_id' to identify control cells")
 
 
 def sigma_from_labeled_cells(paths, hvg, shrink):
-    """dict[(donor,cond)] -> (Sigma_c, n_ctrl_cells). Backed reads, control cells only, one log1p."""
+    """dict[(donor,cond)] -> (Sigma_c, n_ctrl_cells). Backed reads, control cells only, one log1p.
+    Assumes assigned_guide files are per-(donor,condition) (stratum from filename); all control cells
+    in a file accumulate into that stratum."""
     import anndata as ad
     hvg_set = {g: i for i, g in enumerate(hvg)}
-    # accumulate per stratum across all files
     acc = {}  # (donor,cond) -> [s1, s2, n]
     for path in paths:
+        donor, cond = _file_stratum(path)
+        if donor is None or cond is None:
+            print(f"  WARN {Path(path).name}: cannot parse donor/condition from filename "
+                  f"(expected e.g. D1_Stim8hr...); skipped. Rename or split per (donor,condition).")
+            continue
         adata = ad.read_h5ad(path, backed="r")
         var = _strip_version(list(adata.var_names))
         col_of = {g: j for j, g in enumerate(var)}
-        take_cols = [(hvg_set[g], col_of[g]) for g in hvg if g in col_of]  # (hvg_idx, var_idx)
-        if not take_cols:
+        take = [(hvg_set[g], col_of[g]) for g in hvg if g in col_of]  # (hvg_idx, var_idx)
+        if not take:
             print(f"  WARN {Path(path).name}: no HVG genes in var_names (version mismatch?) — skipped")
             continue
-        hvg_idx = np.array([a for a, _ in take_cols]); var_idx = np.array([b for _, b in take_cols])
-        is_ctrl, donor, cond = _canon_strata_and_control(adata.obs, path)
-        ctrl_rows = np.flatnonzero(is_ctrl)
+        hvg_idx = np.array([a for a, _ in take]); var_idx = np.array([b for _, b in take])
+        ctrl_rows = np.flatnonzero(_control_mask(adata.obs, path))
+        a = acc.setdefault((donor, cond), [np.zeros(len(hvg)), np.zeros((len(hvg), len(hvg))), 0])
         for i0 in range(0, ctrl_rows.size, CHUNK):
-            rows = ctrl_rows[i0:i0 + CHUNK]
-            sub = adata[rows].to_memory()
+            sub = adata[ctrl_rows[i0:i0 + CHUNK]].to_memory()
             X = sub.X
             X = X.toarray() if hasattr(X, "toarray") else np.asarray(X)
             X = normalize_pseudobulk_counts(X)          # -> log1p(CP10k), ONCE (already includes log1p)
             Xh = np.zeros((X.shape[0], len(hvg)), dtype=np.float64)
             Xh[:, hvg_idx] = X[:, var_idx]
-            for key in set(zip(donor[rows], cond[rows])):
-                m = (donor[rows] == key[0]) & (cond[rows] == key[1])
-                Xk = Xh[m]
-                a = acc.setdefault(key, [np.zeros(len(hvg)), np.zeros((len(hvg), len(hvg))), 0])
-                a[0] += Xk.sum(0); a[1] += Xk.T @ Xk; a[2] += Xk.shape[0]
+            a[0] += Xh.sum(0); a[1] += Xh.T @ Xh; a[2] += Xh.shape[0]
     out = {}
     for key, (s1, s2, n) in acc.items():
         if n < MIN_CTRL_CELLS:
             print(f"  WARN stratum {key}: only {n} control cells (<{MIN_CTRL_CELLS}) — skipped")
             continue
         mu = s1 / n
-        cov = 0.5 * ((s2 - n * np.outer(mu, mu)) / (n - 1) + ((s2 - n * np.outer(mu, mu)) / (n - 1)).T)
+        cov = (s2 - n * np.outer(mu, mu)) / (n - 1)
+        cov = 0.5 * (cov + cov.T)
         if shrink > 0:
             cov = (1 - shrink) * cov + shrink * np.diag(np.diag(cov))
         out[key] = (cov, n)
@@ -212,18 +200,27 @@ def sigma_from_cell_cache(hvg, shrink):
 # Pseudobulk single-perturbation deltas (confirmed correct against core.contract)
 # ---------------------------------------------------------------------------
 def load_single_pert_deltas(hvg):
+    """dict[(donor,cond)] -> (pert_ids, dX matrix). Vectorized (no per-row iterrows)."""
     frames = [pd.read_parquet(p) for p in (C.PSEUDOBULK_TRAIN, C.PSEUDOBULK_TEST) if p.exists()]
     if not frames:
         raise FileNotFoundError(f"no pseudobulk parquet at {C.PSEUDOBULK_DIR}")
-    delta = C.pseudobulk_delta(pd.concat(frames)).reindex(columns=hvg)   # index (pert,cond,donor)
+    full = pd.concat(frames)
+    # scale sanity: expr/delta must be log1p(CP10k); raw-count means would break the Sigma_c comparison
+    exprmax = float(np.nanmax(np.abs(C.pseudobulk_expr(full).to_numpy())))
+    if exprmax > 30:
+        print(f"  WARN pseudobulk expr max |.|={exprmax:.1f} looks like RAW counts, not log1p(CP10k); "
+              f"Sigma_c(log1p) and dX would be in different spaces — rebuild via build_from_czi_pseudobulk.")
+    delta = C.pseudobulk_delta(full).reindex(columns=hvg)          # index (pert_id, condition, donor)
+    perts = delta.index.get_level_values(0).astype(str).to_numpy()
+    conds = delta.index.get_level_values(1).astype(str).to_numpy()
+    donors = delta.index.get_level_values(2).astype(str).to_numpy()
+    vals = delta.to_numpy(dtype=np.float64)
     out = {}
-    for (pert, cond, donor), row in delta.iterrows():
-        if str(pert) == C.CONTROL_PERT_ID:
-            continue
-        key = (_canon_donor(str(donor)), _canon_condition(str(cond)))
-        out.setdefault(key, ([], []))
-        out[key][0].append(str(pert)); out[key][1].append(row.to_numpy(dtype=np.float64))
-    return {k: (p, np.vstack(v)) for k, (p, v) in out.items()}
+    for c, d in set(zip(conds.tolist(), donors.tolist())):
+        m = (conds == c) & (donors == d) & (perts != C.CONTROL_PERT_ID)
+        if m.any():
+            out[(_canon_donor(d), _canon_condition(c))] = (list(perts[m]), vals[m])
+    return out
 
 
 # ---------------------------------------------------------------------------
