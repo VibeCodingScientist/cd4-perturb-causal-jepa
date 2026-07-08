@@ -24,18 +24,16 @@ def _gene_ids(n: int) -> List[str]:
     return [f"ENSG{i:08d}" for i in range(n)]
 
 
-def make_group_expr(
+def _generate(
     *,
     n_genes: int = 200,
     n_perts: int = 120,
     n_donors: int = 4,
     seed: int = 0,
-) -> pd.DataFrame:
-    """Group-level (pert_id, condition, donor) mean expression with real causal structure.
-
-    Returns a frame indexed by (pert_id, condition, donor), columns = gene ids. Downstream
-    `pseudobulk.compute_deltas` recovers each perturbation's delta as pert - matched control.
-    """
+) -> Tuple[pd.DataFrame, dict]:
+    """Return (group_expr, latents). `latents["prop"][:, k]` is the propagated effect of
+    knocking down gene k — used to build informative synthetic ESM-2 embeddings so the
+    baselines have genuine learnable signal (not just a plumbing check)."""
     rng = np.random.default_rng(seed)
     genes = _gene_ids(n_genes)
     perturbed = genes[:n_perts]  # each perturbation silences one of these genes
@@ -71,7 +69,16 @@ def make_group_expr(
                 rows[(gk, cond, donor)] = expr
 
     idx = pd.MultiIndex.from_tuples(list(rows.keys()), names=C.PSEUDOBULK_INDEX_NAMES)
-    return pd.DataFrame(np.vstack(list(rows.values())), index=idx, columns=genes).sort_index()
+    expr = pd.DataFrame(np.vstack(list(rows.values())), index=idx, columns=genes).sort_index()
+    latents = {"prop": prop, "genes": genes, "perturbed": perturbed, "n_genes": n_genes}
+    return expr, latents
+
+
+def make_group_expr(*, n_genes: int = 200, n_perts: int = 120, n_donors: int = 4,
+                    seed: int = 0) -> pd.DataFrame:
+    """Group-level (pert_id, condition, donor) mean expression with real causal structure."""
+    expr, _ = _generate(n_genes=n_genes, n_perts=n_perts, n_donors=n_donors, seed=seed)
+    return expr
 
 
 def write_synthetic(
@@ -94,7 +101,8 @@ def write_synthetic(
     genes = _gene_ids(n_genes)
     perturbed = genes[:n_perts]
 
-    expr = make_group_expr(n_genes=n_genes, n_perts=n_perts, seed=seed)
+    expr, latents = _generate(n_genes=n_genes, n_perts=n_perts, seed=seed)
+    prop = latents["prop"]  # prop[:, k] = propagated effect of knocking down gene k
 
     if freeze_split:
         # HVG "list" = all synthetic genes (n_genes stands in for HVG_N here). Suppress the
@@ -116,13 +124,25 @@ def write_synthetic(
     train_pb = pd.read_parquet(C.PSEUDOBULK_TRAIN)
     feat.build_and_write_deg_freq(train_pb)
 
-    # Feature caches with correct contract dims (random stand-ins for ESM-2 / context prior)
+    # Feature caches with correct contract dims. To give baselines genuine learnable signal,
+    # a perturbed gene's ESM-2 stand-in encodes its latent effect prop[:, k] in the leading
+    # dims (+ noise); everything else is random. This mirrors "the gene embedding carries the
+    # information needed to predict the knockdown response", so gene hold-out is non-trivial.
     rng = np.random.default_rng(seed + 1)
-    esm2 = pd.DataFrame(rng.normal(0, 1, (n_genes, C.ESM2_DIM)), index=genes)
-    esm2.index.name = "gene_id"
+    esm2_mat = rng.normal(0, 1.0, (n_genes, C.ESM2_DIM))
+    lead = min(n_genes, C.ESM2_DIM)
+    for k, gk in enumerate(perturbed):
+        gi = genes.index(gk)
+        esm2_mat[gi, :lead] = prop[:lead, k] + rng.normal(0, 0.3, lead)
+    esm2 = pd.DataFrame(esm2_mat, index=genes); esm2.index.name = "gene_id"
     feat.write_esm2(esm2)
-    ctx = pd.DataFrame(rng.normal(0, 1, (n_genes, C.CONTEXT_PRIOR_DIM)), index=genes)
-    ctx.index.name = "gene_id"
+    # context prior: node2vec-analog carrying each gene's regulator row (+ noise)
+    ctx_mat = rng.normal(0, 1.0, (n_genes, C.CONTEXT_PRIOR_DIM))
+    lead_c = min(n_genes, C.CONTEXT_PRIOR_DIM)
+    for k, gk in enumerate(perturbed):
+        gi = genes.index(gk)
+        ctx_mat[gi, :lead_c] = prop[k, :lead_c] + rng.normal(0, 0.3, lead_c)
+    ctx = pd.DataFrame(ctx_mat, index=genes); ctx.index.name = "gene_id"
     feat.write_context_prior(ctx)
 
     return {

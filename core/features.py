@@ -236,3 +236,26 @@ def load_context_prior() -> pd.DataFrame:
 
 def load_deg_freq() -> pd.DataFrame:
     return pd.read_parquet(C.DEG_FREQ_CACHE)
+
+
+def pert_gene_features(
+    perts: Sequence[str],
+    *,
+    use_context: bool = True,
+    esm2: Optional[pd.DataFrame] = None,
+    context: Optional[pd.DataFrame] = None,
+) -> pd.DataFrame:
+    """Per-perturbation gene-token feature matrix (index = pert_id, numeric columns).
+
+    Because pert_id IS the silenced gene's Ensembl id, a perturbation's features are just
+    that gene's ESM-2 (⊕ context-prior) embedding — available for held-out genes too, which
+    is exactly how a model generalizes to a gene it never saw silenced. Missing genes get 0.
+    """
+    esm2 = esm2 if esm2 is not None else load_esm2()
+    parts = [esm2.reindex(perts).rename(columns=lambda c: f"esm2_{c}")]
+    if use_context:
+        ctx = context if context is not None else load_context_prior()
+        parts.append(ctx.reindex(perts).rename(columns=lambda c: f"ctx_{c}"))
+    X = pd.concat(parts, axis=1).astype(float).fillna(0.0)
+    X.index = pd.Index(list(perts), name="pert_id")
+    return X
