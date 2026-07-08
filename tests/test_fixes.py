@@ -58,12 +58,23 @@ def test_czi_obs_mapping():  # finding-adjacent: CZI adapter correctness
     c = data.czi_obs_to_canonical(obs)
     assert c["pert_id"].tolist() == ["ENSG1", C.CONTROL_PERT_ID, "ENSG9"]
     assert c["condition"].tolist() == ["Rest", "Stim48hr", "Stim8hr"]
-    assert c["donor"].tolist() == ["donor_1", "donor_2", "donor_3"]
+    # donor codes (real files use e.g. CE0008162) -> donor_1..N via a sorted map (4 donors)
+    d4 = pd.DataFrame({
+        "perturbed_gene_id": ["ENSG1"] * 4,
+        "culture_condition": ["Rest"] * 4,
+        "donor_id": ["CE0010866", "CE0006864", "CE0008162", "CE0008678"],
+        "guide_type": ["targeting"] * 4,
+    })
+    dm = data.czi_donor_map(d4)
+    assert dm["CE0006864"] == "donor_1" and dm["CE0010866"] == "donor_4", dm
+    assert data.czi_obs_to_canonical(d4, dm)["donor"].tolist() == ["donor_4", "donor_1", "donor_2", "donor_3"]
+    # a few custom spike-ins (e.g. PuroR) don't defeat the Ensembl-var detection
+    assert data._frac_ensembl(["CUSTOM001_PuroR"] + [f"ENSG{i:08d}" for i in range(50)]) > 0.8
     # count normalization -> log1p CP10k, per row
     X = np.array([[1.0, 1.0, 0.0, 0.0]])
     n = data.normalize_pseudobulk_counts(X)
     assert np.isclose(n[0, 0], np.log1p(0.5 * 1e4)) and n[0, 2] == 0.0
-    print("PASS  CZI obs->canonical mapping + count normalization")
+    print("PASS  CZI obs->canonical mapping + donor map + spike-in tolerance + normalization")
 
 
 def test_deg_freq_excludes_control():  # finding #7

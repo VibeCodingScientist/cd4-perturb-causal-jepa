@@ -100,16 +100,19 @@ def normalize_obs(adata, symbol_to_ensembl: Optional[Dict[str, str]] = None) -> 
     adata.obs["donor"] = [_canon_donor(v) for v in obs[dcol]]
 
 
+def _frac_ensembl(names) -> float:
+    s = [str(v) for v in list(names)[:500]]
+    return sum(v.startswith("ENSG") for v in s) / max(1, len(s))
+
+
 def ensure_ensembl_var(adata, symbol_to_ensembl: Optional[Dict[str, str]] = None) -> None:
-    """Ensure var_names are Ensembl ids. If they are symbols and a map is given, RENAME them
-    in place (unmapped symbols kept as-is; HVG selection later picks only ENSG names). No-op if
-    already ENSG. Rename-only avoids an inplace var subset, which is fragile on a backed AnnData;
-    prefer a `gene_ids` column if the raw object carries one."""
-    if all(str(v).startswith("ENSG") for v in adata.var_names[:20]):
+    """Ensure var_names are Ensembl ids. No-op if they already are (a handful of custom
+    spike-ins like PuroR are tolerated). Otherwise use the `gene_ids` column, or RENAME symbols
+    via the provided map (unmapped kept as-is; HVG selection later keeps only ENSG names).
+    Rename-only avoids a fragile inplace var subset on a backed AnnData."""
+    if _frac_ensembl(adata.var_names) >= 0.8:
         return
-    if "gene_ids" in adata.var.columns and all(
-        str(v).startswith("ENSG") for v in adata.var["gene_ids"][:20]
-    ):
+    if "gene_ids" in adata.var.columns and _frac_ensembl(adata.var["gene_ids"]) >= 0.8:
         adata.var_names = list(adata.var["gene_ids"])
     elif symbol_to_ensembl:
         adata.var_names = [symbol_to_ensembl.get(str(v), str(v)) for v in adata.var_names]
@@ -181,21 +184,32 @@ def perturbed_genes(adata) -> List[str]:
 # causal) runs on pseudobulk deltas, so we adapt this file directly instead of streaming the
 # ~1.7 TB of single cells (that is the JEPA lane's job). obs columns are documented in the
 # dataset's data_sharing_readme.md.
-def czi_obs_to_canonical(obs: pd.DataFrame) -> pd.DataFrame:
+def czi_obs_to_canonical(obs: pd.DataFrame,
+                         donor_map: Optional[Dict[str, str]] = None) -> pd.DataFrame:
     """Map CZI pseudobulk obs -> canonical (pert_id, condition, donor).
 
     pert_id = perturbed_gene_id (Ensembl) for targeting guides, CONTROL_PERT_ID for
-    non-targeting. Pure/testable (no anndata)."""
+    non-targeting. Donor codes (e.g. CE0008162) are relabeled donor_1..N via `donor_map` so the
+    donor probe (donor_4) resolves; without a map they fall back to a digit-derived label.
+    Pure/testable (no anndata)."""
     gtype = obs["guide_type"].astype(str).str.lower()
     is_ntc = gtype.str.contains("non") & gtype.str.contains("target")
     gid = obs["perturbed_gene_id"].astype(str)
     pert = [C.CONTROL_PERT_ID if ntc else g for ntc, g in zip(is_ntc, gid)]
+    donor_map = donor_map or {}
+    donor = [donor_map.get(str(d), _canon_donor(d)) for d in obs["donor_id"]]
     return pd.DataFrame(
         {"pert_id": pert,
          "condition": [_canon_condition(v) for v in obs["culture_condition"]],
-         "donor": [_canon_donor(v) for v in obs["donor_id"]]},
+         "donor": donor},
         index=obs.index,
     )
+
+
+def czi_donor_map(obs: pd.DataFrame) -> Dict[str, str]:
+    """Deterministic donor-code -> donor_1..N map (sorted), so donor_4 is a stable probe."""
+    codes = sorted(str(d) for d in pd.unique(obs["donor_id"]))
+    return {c: f"donor_{i + 1}" for i, c in enumerate(codes)}
 
 
 def normalize_pseudobulk_counts(X: np.ndarray, target_sum: float = 1e4) -> np.ndarray:
@@ -241,16 +255,19 @@ def build_from_czi_pseudobulk(
     from . import features as feat
 
     adata = ad.read_h5ad(h5ad_path, backed="r")
-    ensure_ensembl_var(adata)  # var_names <- gene_ids (Ensembl)
+    ensure_ensembl_var(adata)  # var_names already Ensembl (tolerates custom spike-ins)
     genes_all = list(adata.var_names)
     n = adata.n_obs
+    donor_map = czi_donor_map(adata.obs)
     qmask_all = _czi_quality_mask(adata.obs) if quality_filter else np.ones(n, dtype=bool)
 
-    # HVG on a normalized subsample of quality pseudobulks
+    # HVG on a normalized subsample of quality pseudobulks, restricted to real ENSG genes
+    ens_mask = np.array([str(v).startswith("ENSG") for v in genes_all])
     keep_pos = np.where(qmask_all)[0]
     rng = np.random.default_rng(C.SPLIT_SEED)
     sub_pos = np.sort(rng.choice(keep_pos, size=min(hvg_subsample, len(keep_pos)), replace=False))
     sub = adata[sub_pos].to_memory()
+    sub = sub[:, ens_mask].copy()
     subX = sub.X.toarray() if hasattr(sub.X, "toarray") else np.asarray(sub.X)
     import scanpy as sc
     sub.X = normalize_pseudobulk_counts(subX)
@@ -269,7 +286,7 @@ def build_from_czi_pseudobulk(
         Xc = sl.X[:, gene_pos]
         Xc = Xc.toarray() if hasattr(Xc, "toarray") else np.asarray(Xc)
         Xc = normalize_pseudobulk_counts(Xc)[m]
-        obs_c = czi_obs_to_canonical(sl.obs).reset_index(drop=True)[m]
+        obs_c = czi_obs_to_canonical(sl.obs, donor_map).reset_index(drop=True)[m]
         acc.add(obs_c, Xc)
 
     expr = acc.result()
