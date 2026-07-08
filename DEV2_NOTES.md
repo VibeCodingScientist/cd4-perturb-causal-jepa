@@ -1,88 +1,63 @@
-# Developer 2 — JEPA + analysis half (status + integration contract)
+# Developer 2 — JEPA + analysis half (status + handshake)
 
-Built on branch `dev2` (worktree `../cd4-ws2`) against the frozen `core/contract.py`.
-Everything is unit-tested on synthetic fixtures and swaps to real data / Developer 1's
-real classes at **core-frozen** with no change to the JEPA training logic.
+Branch `dev2` (worktree `../cd4-ws2`). **Reconciled to Developer 1's real core-frozen
+code** (merged origin/main). 61 tests green (my 51 + Dev1's 10); JEPA verified to learn
+on Dev1's real `GeneTokenEncoder`; a JEPA checkpoint loads into Dev1's real
+`CausalCisTransFormer.encoder`.
 
 ## What's here
 
 | File | Role | Plan |
 |---|---|---|
-| `core/models/jepa.py` | Cell-JEPA pretraining: masked-value student, stop-grad EMA teacher, predictor, cosine + recon loss, VICReg collapse guard, measure-then-extrapolate gate, checkpointing, `python -m core.models.jepa` (G4) | §7e |
-| `core/models/encoder_api.py` | The gene-token encoder interface both halves share (`EncoderOutput`, `GeneEncoder` protocol, mask sentinel) | §7d/§7e |
-| `core/models/_reference_gene_tokens.py` | Reference `GeneTokenEncoder` (faithful CisTransCell-style, mask-aware) — stand-in until Dev 1's `gene_tokens.py`; doubles as the interface spec | §7d |
-| `core/models/jepa_data.py` | Single-cell feed: `CellCacheDataset` (mmap shards), `SyntheticCellDataset`, `pad_collate`, `build_cell_loader` | §7e/§2 |
-| `core/models/jepa_integration.py` | JEPA → causal weight transfer + the G5 seams (`jepa_causal`, `jepa_only`) | §7f |
-| `core/voi.py` | Ensemble-disagreement VOI + subsampling / sample-efficiency curve | §7h |
-| `core/ablation.py` | The 2×2 harness: score the four models, upsert the benchmark table, C2/C3 contrasts | §7f |
-| `figures/make_figures.py` | Figures 1–4 (benchmark table, 2×2, sample efficiency, biology annotation) | §12 |
-| `tests/` | 46 tests, all green: JEPA numerics, weight transfer, VOI, ablation, figures | — |
+| `core/models/jepa.py` | Cell-JEPA: masked-value student, stop-grad EMA teacher, predictor, cosine + recon loss, VICReg collapse guard, measure-then-extrapolate gate, checkpointing. Entry points `run_jepa` (G4) / `run_jepa_finetune` (G5) | §7e |
+| `core/models/jepa_data.py` | Windowed single-cell feed `(values, esm2, ctx)` + **mmap-able `.npy`** cell cache + `materialize_cell_cache` (Task 2) | §7e/§2 |
+| `core/models/jepa_integration.py` | JEPA → causal weight transfer + G5 fine-tune | §7f |
+| `core/voi.py` | Ensemble-disagreement VOI + subsampling curve | §7h |
+| `core/ablation.py` | 2×2 harness + C2/C3 contrasts | §7f |
+| `figures/make_figures.py` | Figures 1–4 | §12 |
+| `tests/` | 51 dev2 tests (JEPA numerics, weight transfer into the real causal model, VOI, ablation, figures) | — |
 
-Run the suite: `.venv/bin/python -m pytest tests/ -q` (venv inherits system python3.12
-packages + torch; see `requirements-dev.txt`).
+Run: `.venv/bin/python -m pytest tests/ -q`.
 
-## Interfaces Developer 1's code must satisfy (so integration is a drop-in)
+## How I consume Developer 1's real interfaces (verified)
+- **Encoder** `core.models.gene_tokens.GeneTokenEncoder(d_model, esm2_dim, ctx_dim, n_proxy, n_proxy_rounds, n_heads)`,
+  `forward(values [B,L], esm2 [L,esm2_dim], ctx [L,ctx_dim]) -> EncoderOutput(tokens, cls)`, has `value_head`.
+  My JEPA uses it as the student; `student.state_dict()` loads into `causal_model.encoder` key-for-key
+  (`test_transfer_into_real_causal_model`). JEPAConfig defaults (`d_model`, `esm2_dim=ESM2_DIM`,
+  `ctx_dim=CONTEXT_PRIOR_DIM`, `n_proxy=32`, `n_proxy_rounds=2`, `n_heads=4`) match `CausalConfig` so the transfer is exact.
+- **Feed**: single-cell resolution via a shared gene **window** per batch (≤600 HVG, §7e) — the same
+  gene-window batching the causal model uses — so `esm2/ctx` are `[W,dim]` shared, matching the encoder.
+- **Sampler**: I materialize `CELLS_DIR` with Dev1's `data.stratified_cell_indices` + `read_backed`
+  (Dev1's `data.py` has the index sampler but no `CELLS_DIR` writer — that writer is mine).
+- **Eval**: `core.eval.evaluate(pred_df, split) -> dict` returns the contract metric keys; my ablation consumes it as-is.
+- **Queue**: `gpu_queue.py` dispatches `jepa → jepa.run_jepa`, `jepa_finetune → jepa.run_jepa_finetune` (both exist).
 
-### 1. `core/models/gene_tokens.py::GeneTokenEncoder`
-`core.models.jepa` imports the real class if present and falls back to the reference
-otherwise. For **weight transfer** (`student.state_dict()` → `CausalCisTransFormer.encoder`)
-and for the JEPA student to be usable, the real encoder should expose (see
-`core/models/encoder_api.py` and the reference for the exact shape):
+## 🤝 Handshake items for Developer 1 (flagged, not blocking)
+1. **G5 encoder-init hook (preferred).** To keep the 2×2 "same trainer, only init differs," add an
+   `encoder_init_ckpt=None` param to `causal_cistransformer._run` that calls
+   `load_jepa_into_encoder(model.encoder, encoder_init_ckpt)` right after `_build_model`.
+   `finetune_jepa_models` auto-detects and uses it; **until then it runs a faithful replica of `_run`
+   with the init inserted** (depends on your `_build_model`/`_train`/`_predict_split` privates — kept in lockstep).
+2. **Benchmark writes.** You write rows via `eval.evaluate_and_record`; my `ablation.upsert_benchmark`
+   also upserts (keep='last', no clobber). Let's pick one writer for the JEPA rows to avoid double entries.
+3. **Cell-cache helper (nice-to-have).** `materialize_cell_cache` uses `data.cells_to_hvg_matrix(adata, idx, hvg)`
+   if you expose it (log1p-CP10k over the HVG panel, chunked); otherwise it falls back to a local chunked densify.
 
-- `__init__(n_genes, d_model, n_heads, n_layers, n_proxy, ...)`
-- attribute `d_model: int`
-- attribute `value_head: nn.Module` mapping token embeddings `[.., d_model] → [.., 1]`
-  (JEPA reconstruction term)
-- `forward(gene_ids [B,L] long, values [B,L] float, key_padding_mask=None, attn_mask=None)
-  → EncoderOutput(tokens [B,L,d_model], pooled [B,d_model])`
-- **`attn_mask` is where the causal do-mask (§7d) is applied**, on the *same* gene
-  self-attention weights JEPA pretrains. JEPA passes `attn_mask=None`.
+## 🚦 GPU / box status — NOT yet time to run G4
+Box `ssh ubuntu@54.163.21.62`: clean **L4 (23 GB), idle, 0 procs, no repo, no `~/cd4-perturb-data`, no cell cache**.
+Nothing deployed or run there yet. My G4 (JEPA pretraining) is the Day-2 **overnight** job and its prerequisites
+are not met:
+- [ ] `esm2`/`context_prior` caches built (G1) — Dev1's `esm2` job needs a gene→sequence map first.
+- [ ] cell cache materialized — **needs the raw 22M-cell GSE278572 `.h5ad` (a >5 GB download → your approval).**
+- [ ] Dev1's G2/G3 (`causal`/`noncausal`) run and cleared the single GPU queue (I go after them).
+- [ ] repo + env deployed to the box.
 
-If Dev 1's signature differs, only the thin adapter in `jepa_integration` changes — the
-JEPA loop is untouched. If submodule names differ, `load_jepa_into_encoder(..., strict=False)`
-reports the mismatch instead of silently misloading.
-
-### 2. `core/data.py` single-cell subsampler → `CELLS_DIR`
-JEPA consumes `DATA_ROOT/cells/` in this schema (mirrored by
-`jepa_data.write_synthetic_cell_cache`, and read by `CellCacheDataset`):
-
-```
-cells_*.npz  each: gene_ids int32 [N,L]  (Ensembl-id codes 0..n_genes-1, right-padded)
-                   values   float32 [N,L] (log1p-CP10k; pad = 0.0)
-                   lengths  int32   [N]   (real gene count per cell, ≤ 600)
-manifest.json  {"n_cells","n_genes","max_genes","shards":[...]}
-```
-~1–2M cells, stratified over donor × condition (§7e/§2). Padding uses gene_id 0 (valid
-embedding index) + a per-batch `key_padding_mask`.
-
-### 3. `core/eval.py::evaluate(pred_delta_df, split) -> dict`
-Consumed as-is by `core.ablation`. The harness reads `runs/<model>_<split>.parquet` and
-calls `evaluate`; it never reimplements metrics. Tests inject a mock evaluate.
-
-### 4. `core/models/causal_cistransformer.py` (G5 only)
-`jepa_integration.build_jepa_causal_model` / `finetune_and_predict` expect
-`CausalCisTransFormer(use_causal_mask: bool, ...)` with an `.encoder` attribute and a
-trainer `train_causal_model(model, split, model_name, ...) -> pred_delta_df`. Until then
-those functions raise a clear, actionable `ImportError` (they are the G5 seam).
-
-## Integration steps at `core-frozen`
-1. `git merge origin/main` into `dev2`.
-2. Real `GeneTokenEncoder` is picked up automatically by `_default_encoder_cls`.
-3. Dev 1 runs the subsampler → `CELLS_DIR`; `build_cell_loader` then feeds real cells.
-4. Submit **G4** after Dev 1's G2/G3 clear the queue: `python gpu_queue.py submit jepa`
-   → runs `core.models.jepa.main` (overnight; epoch-1 gate first; checkpoints
-   `CHECKPOINTS_DIR/jepa_final.pt`).
-5. Submit **G5**: fine-tune JEPA-init causal (`jepa_causal`, mask on) + `jepa_only`
-   (mask off) via `jepa_integration.finetune_and_predict`, writing the two `runs/`.
-6. `core.ablation.run_2x2()` scores all four cells, upserts `results/benchmark_table.csv`
-   (won't clobber CP1 rows), returns the 2×2 + C2/C3 contrasts.
-7. `core.voi` + `figures.make_figures.make_all_figures` → the three demo figures.
+I will **flag before**: downloading the h5ad, deploying to the box, or submitting any GPU job. When those
+prerequisites are met I'll submit strictly via `python gpu_queue.py submit jepa`.
 
 ## CP2 definition-of-done — status
-- [x] JEPA implemented to the exact §7e recipe (verified it learns + does not collapse).
-- [x] JEPA → causal weight transfer implemented and tested.
-- [x] 2×2 harness (`jepa_only`, `jepa_causal` rows) built against the eval signature.
-- [x] VOI scores + subsampling curve built.
-- [x] All three demo figures + biology figure render.
-- [ ] Runs against **real** models/data (blocked on core-frozen: real encoder, cells,
-      Dev 1's causal runs in `runs/`, and `snakemake` wiring — Dev 1 owns the Snakefile).
+- [x] JEPA to the exact §7e recipe, on Dev1's real encoder (learns; no collapse).
+- [x] JEPA → real causal-encoder weight transfer (tested).
+- [x] 2×2 harness, VOI + subsampling, all figures — built + tested on synthetic.
+- [x] Queue entry points wired; 5 adversarial-review findings fixed.
+- [ ] Runs against **real** data (blocked on G1 + cell cache + G2/G3 + box deploy — the GPU handshake above).

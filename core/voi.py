@@ -203,7 +203,6 @@ def subsampling_curve(
             voi_score.append(float("nan"))
 
     full_score = random_mean[fractions.index(1.0)] if 1.0 in fractions else max(random_mean)
-    target = target_ratio * full_score
     curve = SubsamplingCurve(
         fractions=list(fractions),
         random_mean=random_mean,
@@ -212,9 +211,15 @@ def subsampling_curve(
         full_score=full_score,
         records=records,
     )
-    curve.random_90_fraction = _first_fraction_reaching(fractions, random_mean, target)
-    if voi_scores is not None:
-        curve.voi_90_fraction = _first_fraction_reaching(fractions, voi_score, target)
+    # "90% of full-screen accuracy" is only well-defined when the full-screen anchor is
+    # strictly positive. On the hardest (unseen-condition) hold-out the full-ensemble
+    # Pearson-delta can be <= 0, in which case target_ratio*full_score would INVERT the
+    # threshold (the full point could fail its own target). Leave the 90% marks unset.
+    if full_score > 0:
+        target = target_ratio * full_score
+        curve.random_90_fraction = _first_fraction_reaching(fractions, random_mean, target)
+        if voi_scores is not None:
+            curve.voi_90_fraction = _first_fraction_reaching(fractions, voi_score, target)
     return curve
 
 

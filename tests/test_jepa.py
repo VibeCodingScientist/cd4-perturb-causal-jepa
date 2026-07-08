@@ -1,16 +1,14 @@
-"""Unit tests for the Cell-JEPA recipe (§7e). No real cells: tiny reference encoders
-on random (gene_id, value) tensors, exactly as the role brief prescribes."""
-import math
-
+"""Unit tests for the Cell-JEPA recipe (§7e), on Developer 1's real GeneTokenEncoder
+with tiny synthetic (values, esm2, ctx) tensors."""
 import pytest
 import torch
 
-from core.models.encoder_api import MASK_VALUE_SENTINEL
 from core.models.jepa import (
     CellJEPA,
     JEPACollapse,
     JEPAConfig,
     JEPAReport,
+    MASK_VALUE_SENTINEL,
     cosine_alignment_loss,
     lr_schedule,
     mask_values,
@@ -18,26 +16,25 @@ from core.models.jepa import (
     pretrain_jepa,
     vicreg_penalty,
 )
-from tests.fixtures import random_cell_batch, tiny_jepa
+from tests.fixtures import random_window_batch, tiny_jepa
 
 
 # --------------------------------------------------------------------------- masking
-def test_mask_values_touches_only_values_not_ids():
-    _, values, _ = random_cell_batch(batch=4, length=20, seed=1)
+def test_mask_values_touches_only_values():
+    values, _, _ = random_window_batch(batch=4, window=20, seed=1)
     g = torch.Generator().manual_seed(0)
     masked, mask = mask_values(values, frac=0.5, generator=g)
-    # masked positions hold the sentinel; unmasked positions are unchanged
     assert torch.all(masked[mask] == MASK_VALUE_SENTINEL)
     assert torch.allclose(masked[~mask], values[~mask])
-    # roughly the requested fraction is masked
     assert 0.2 < mask.float().mean().item() < 0.8
 
 
-def test_mask_never_selects_padding():
-    _, values, kpm = random_cell_batch(batch=4, length=20, seed=2, pad=True)
-    g = torch.Generator().manual_seed(0)
-    _, mask = mask_values(values, frac=0.9, key_padding_mask=kpm, generator=g)
-    assert not (mask & kpm).any(), "padding positions must never be masked"
+def test_mask_fraction_extremes():
+    values, _, _ = random_window_batch(seed=2)
+    none_masked, m0 = mask_values(values, frac=0.0)
+    assert not m0.any() and torch.allclose(none_masked, values)
+    _, m1 = mask_values(values, frac=1.0)
+    assert m1.all()
 
 
 # --------------------------------------------------------------------------- losses
@@ -50,14 +47,13 @@ def test_cosine_alignment_loss_bounds():
 def test_cosine_loss_stops_gradient_on_target():
     pred = torch.randn(4, 8, requires_grad=True)
     target = torch.randn(4, 8, requires_grad=True)
-    loss = cosine_alignment_loss(pred, target)
-    loss.backward()
+    cosine_alignment_loss(pred, target).backward()
     assert pred.grad is not None
     assert target.grad is None, "target must be detached (stop-gradient)"
 
 
 def test_vicreg_penalty_flags_collapse():
-    collapsed = torch.zeros(16, 8) + 0.01 * torch.randn(1, 8)  # ~no variance across batch
+    collapsed = torch.zeros(16, 8) + 0.01 * torch.randn(1, 8)
     diverse = torch.randn(16, 8)
     assert vicreg_penalty(collapsed) > vicreg_penalty(diverse)
 
@@ -65,18 +61,26 @@ def test_vicreg_penalty_flags_collapse():
 # --------------------------------------------------------------------------- module
 def test_forward_returns_finite_losses_with_grad():
     jepa = tiny_jepa(seed=3).train()
-    gene_ids, values, _ = random_cell_batch(batch=8, length=16, seed=3)
-    out = jepa(gene_ids, values)
+    values, esm2, ctx = random_window_batch(batch=8, window=16, seed=3)
+    out = jepa(values, esm2, ctx)
     assert out["loss"].requires_grad
     for key in ("loss", "loss_jepa", "loss_rec", "teacher_std"):
         assert torch.isfinite(out[key]).all()
     assert out["teacher_std"].item() >= 0.0
 
 
+def test_forward_survives_batch_size_one():
+    """Regression: the predictor must not crash on B=1 (LayerNorm, not BatchNorm)."""
+    jepa = tiny_jepa(seed=3).train()
+    values, esm2, ctx = random_window_batch(batch=1, window=16, seed=3)
+    out = jepa(values, esm2, ctx)
+    assert torch.isfinite(out["loss"]).all()
+
+
 def test_teacher_is_frozen_and_gets_no_gradient():
     jepa = tiny_jepa(seed=4).train()
-    gene_ids, values, _ = random_cell_batch(batch=8, length=16, seed=4)
-    jepa(gene_ids, values)["loss"].backward()
+    values, esm2, ctx = random_window_batch(batch=8, window=16, seed=4)
+    jepa(values, esm2, ctx)["loss"].backward()
     assert all(not p.requires_grad for p in jepa.teacher.parameters())
     assert all(p.grad is None for p in jepa.teacher.parameters())
     assert any(p.grad is not None for p in jepa.student.parameters())
@@ -94,9 +98,8 @@ def test_ema_update_is_a_convex_combination():
         assert torch.allclose(pt, 0.9 * to_ + 0.1 * sn, atol=1e-6)
 
 
-def test_teacher_not_deepcopy_shared_with_student():
+def test_teacher_independent_of_student():
     jepa = tiny_jepa(seed=6)
-    # perturbing the student must not change the teacher (independent tensors)
     t_before = next(jepa.teacher.parameters()).clone()
     with torch.no_grad():
         next(jepa.student.parameters()).add_(1.0)
@@ -123,47 +126,50 @@ def test_momentum_schedule_ramps_base_to_final():
 
 def test_lr_schedule_warmup_then_decay():
     total, base = 100, 2e-4
-    assert lr_schedule(0, total, base, warmup_frac=0.1) < base       # warming up
+    assert lr_schedule(0, total, base, warmup_frac=0.1) < base
     assert lr_schedule(10, total, base, warmup_frac=0.1) == pytest.approx(base, rel=0.2)
-    assert lr_schedule(99, total, base, warmup_frac=0.1) < base      # decayed
+    assert lr_schedule(99, total, base, warmup_frac=0.1) < base
     assert lr_schedule(99, total, base, warmup_frac=0.1) >= 0.0
 
 
 # --------------------------------------------------------------------------- training loop
-def test_pretrain_runs_and_checkpoints(tmp_path):
-    from core.models.jepa_data import SyntheticCellDataset, build_cell_loader
+def _synthetic_loader(cfg, hvg_n=64):
+    from core.models.jepa_data import SyntheticHVGCells, build_cell_loader, synthetic_priors
 
-    ckpt = tmp_path / "jepa.pt"
-    cfg = JEPAConfig(
-        n_genes=64, d_model=32, n_heads=2, n_layers=2, n_proxy=4,
-        steps=8, gate_steps=2, batch_size=16, budget_seconds=1e9,
-        device="cpu", log_every=2, ckpt_every=0, ckpt_path=str(ckpt), seed=1,
-    )
-    ds = SyntheticCellDataset(n_cells=256, n_genes=64, max_genes=16, seed=1)
-    loader = build_cell_loader(cfg, dataset=ds)
-    report = pretrain_jepa(loader, cfg, log_fn=lambda *_: None)
+    cells = SyntheticHVGCells(n_cells=256, hvg_n=hvg_n, seed=1).matrix()
+    esm2, ctx = synthetic_priors(hvg_n, cfg.esm2_dim, cfg.ctx_dim, seed=1)
+    return build_cell_loader(cfg, cells=cells, esm2=esm2, ctx=ctx)
+
+
+def _tiny_cfg(**kw):
+    base = dict(hvg_n=64, window=16, d_model=32, esm2_dim=16, ctx_dim=8, n_proxy=4,
+                n_heads=2, steps=8, gate_steps=2, batch_size=16, budget_seconds=1e9,
+                device="cpu", log_every=2, ckpt_every=0, seed=1)
+    base.update(kw)
+    return JEPAConfig(**base)
+
+
+def test_pretrain_runs_and_checkpoints(tmp_path):
+    cfg = _tiny_cfg(ckpt_path=str(tmp_path / "jepa.pt"))
+    report = pretrain_jepa(_synthetic_loader(cfg), cfg, log_fn=lambda *_: None)
     assert report.steps_run == 8
-    assert ckpt.exists()
-    assert report.teacher_std_history, "collapse monitor recorded no teacher_std"
-    assert report.teacher_std_history[-1][1] > 0.0, "teacher collapsed on a benign run"
-    # the checkpoint holds a loadable student state dict
-    payload = torch.load(ckpt, map_location="cpu", weights_only=False)
+    assert (tmp_path / "jepa.pt").exists()
+    assert report.teacher_std_history and report.teacher_std_history[-1][1] > 0.0
+    payload = torch.load(tmp_path / "jepa.pt", map_location="cpu", weights_only=False)
     assert "student_state_dict" in payload and payload["step"] == 8
 
 
 def test_gate_applies_fallback_when_over_budget(tmp_path):
-    from core.models.jepa_data import SyntheticCellDataset, build_cell_loader
-
-    cfg = JEPAConfig(
-        n_genes=64, d_model=32, n_heads=2, n_layers=2, n_proxy=4,
-        steps=10, gate_steps=2, batch_size=16, budget_seconds=1e-9,  # impossible budget
-        auto_fallback=True, device="cpu", ckpt_path=str(tmp_path / "jepa.pt"), seed=1,
-    )
-    ds = SyntheticCellDataset(n_cells=128, n_genes=64, max_genes=12, seed=1)
-    loader = build_cell_loader(cfg, dataset=ds)
-    report = pretrain_jepa(loader, cfg, log_fn=lambda *_: None)
+    cfg = _tiny_cfg(steps=10, budget_seconds=1e-9, auto_fallback=True, ckpt_path=str(tmp_path / "jepa.pt"))
+    report = pretrain_jepa(_synthetic_loader(cfg), cfg, log_fn=lambda *_: None)
     assert report.fallback_applied
-    assert report.config["d_model"] < 32, "fallback should shrink d_model"
+    assert report.config["d_model"] < 32
+
+
+def test_pretrain_rejects_zero_steps(tmp_path):
+    cfg = _tiny_cfg(steps=0, ckpt_path=str(tmp_path / "jepa.pt"))
+    with pytest.raises(ValueError):
+        pretrain_jepa(_synthetic_loader(cfg), cfg, log_fn=lambda *_: None)
 
 
 def test_collapse_guard_escalates_then_raises():
@@ -172,25 +178,7 @@ def test_collapse_guard_escalates_then_raises():
     jepa = tiny_jepa(seed=7)
     report = JEPAReport(steps_run=0, final_loss=0.0)
     cfg = JEPAConfig(collapse_std_floor=1e-3, collapse_warn_ratio=0.1)
-    initial_std = 1.0
-    # a low std relative to initial triggers an escalation (VICReg turns on)
-    out = {"teacher_std": torch.tensor(0.05)}
-    _init, _floor = _collapse_guard(out, initial_std, cfg, jepa, report, lambda *_: None, 0.0)
-    assert report.escalations == 1
-    assert jepa.w_vicreg > 0.0
-    # a truly collapsed std after an escalation is fatal
-    collapsed = {"teacher_std": torch.tensor(1e-6)}
+    _init, _floor = _collapse_guard({"teacher_std": torch.tensor(0.05)}, 1.0, cfg, jepa, report, lambda *_: None, 0.0)
+    assert report.escalations == 1 and jepa.w_vicreg > 0.0
     with pytest.raises(JEPACollapse):
-        _collapse_guard(collapsed, initial_std, cfg, jepa, report, lambda *_: None, 0.0)
-
-
-def test_pretrain_handles_padded_cells(tmp_path):
-    """Padding must not break attention/pooling/reconstruction."""
-    from core.models.jepa import build_jepa
-    from tests.fixtures import random_cell_batch
-
-    cfg = JEPAConfig(n_genes=64, d_model=32, n_heads=2, n_layers=2, n_proxy=4, device="cpu")
-    jepa = build_jepa(cfg).train()
-    gene_ids, values, kpm = random_cell_batch(batch=8, length=20, seed=8, pad=True)
-    out = jepa(gene_ids, values, key_padding_mask=kpm)
-    assert torch.isfinite(out["loss"]).all()
+        _collapse_guard({"teacher_std": torch.tensor(1e-6)}, 1.0, cfg, jepa, report, lambda *_: None, 0.0)

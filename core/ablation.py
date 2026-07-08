@@ -197,9 +197,13 @@ def run_2x2(
 ) -> AblationResult:
     """Score the four models, upsert the benchmark table, assemble the condition
     hold-out 2x2, and compute the C2 / C3 contrasts. The one call for CP2."""
-    scored = score_grid(splits, evaluate_fn=evaluate_fn)
+    # A full-battery metric (e.g. mae) lives only in the FULL columns, so score/upsert
+    # against the matching column set or assemble_2x2 would KeyError on it.
+    full = metric not in contract.METRICS_HEADLINE
+    columns = contract.BENCHMARK_COLUMNS_FULL if full else contract.BENCHMARK_COLUMNS
+    scored = score_grid(splits, evaluate_fn=evaluate_fn, full=full)
     if write and len(scored):
-        upsert_benchmark(scored, table_path=table_path)
+        upsert_benchmark(scored, table_path=table_path, columns=columns)
     grid = assemble_2x2(scored, split=contract.SPLIT_CONDITION, metric=metric)
     return AblationResult(
         benchmark=scored,

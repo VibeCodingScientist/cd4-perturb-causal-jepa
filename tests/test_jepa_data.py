@@ -1,63 +1,78 @@
-"""Tests for the single-cell data feed (schema round-trip + collate + loader)."""
+"""Tests for the windowed single-cell feed + the mmap-able .npy cell cache."""
 import numpy as np
 import torch
 
 from core.models.jepa_data import (
-    CellCacheDataset,
-    SyntheticCellDataset,
+    CellCache,
+    SyntheticHVGCells,
+    WindowedJEPALoader,
     build_cell_loader,
-    pad_collate,
-    write_synthetic_cell_cache,
+    synthetic_priors,
+    write_cell_cache,
 )
 
 
-def test_pad_collate_shapes_and_mask():
-    batch = [
-        (np.array([1, 2, 3], dtype=np.int32), np.array([0.1, 0.2, 0.3], dtype=np.float32), 3),
-        (np.array([4, 5, 0], dtype=np.int32), np.array([0.4, 0.5, 0.0], dtype=np.float32), 2),
-    ]
-    gene_ids, values, kpm = pad_collate(batch)
-    assert gene_ids.shape == (2, 3) and values.shape == (2, 3) and kpm.shape == (2, 3)
-    assert gene_ids.dtype == torch.long and values.dtype == torch.float32 and kpm.dtype == torch.bool
-    # row 0 fully real, row 1 has one pad at the end
-    assert kpm[0].tolist() == [False, False, False]
-    assert kpm[1].tolist() == [False, False, True]
-    assert gene_ids[1, 2].item() == 0  # padded gene id
-    assert torch.allclose(values[0], torch.tensor([0.1, 0.2, 0.3]))
+class _Cfg:
+    def __init__(self, batch_size=8, window=10, esm2_dim=16, ctx_dim=8, seed=0):
+        self.batch_size = batch_size
+        self.window = window
+        self.esm2_dim = esm2_dim
+        self.ctx_dim = ctx_dim
+        self.seed = seed
 
 
-def test_synthetic_dataset_deterministic_and_shaped():
-    a = SyntheticCellDataset(n_cells=32, n_genes=48, max_genes=10, seed=0)
-    b = SyntheticCellDataset(n_cells=32, n_genes=48, max_genes=10, seed=0)
-    g0, v0, n0 = a[3]
-    g1, v1, n1 = b[3]
-    assert g0.shape == (10,) and v0.shape == (10,) and int(n0) == 10
-    assert np.array_equal(g0, g1) and np.allclose(v0, v1)
-    # gene ids within range and unique within a cell
-    assert g0.max() < 48 and len(set(g0.tolist())) == 10
-    assert (v0 >= 0).all()  # log1p-CP10k-like non-negative
+def test_windowed_loader_shapes():
+    cells = SyntheticHVGCells(n_cells=64, hvg_n=48, seed=0).matrix()
+    esm2, ctx = synthetic_priors(48, 16, 8, seed=0)
+    loader = WindowedJEPALoader(cells, esm2, ctx, batch_size=8, window=10, seed=0)
+    values, e, c = next(iter(loader))
+    assert values.shape == (8, 10) and e.shape == (10, 16) and c.shape == (10, 8)
+    assert values.dtype == torch.float32 and e.dtype == torch.float32
 
 
-def test_cell_cache_roundtrip_across_shards(tmp_path):
-    cells_dir = tmp_path / "cells"
-    write_synthetic_cell_cache(cells_dir, n_cells=100, n_genes=48, max_genes=8, shard_size=30, seed=2)
-    ds = CellCacheDataset(cells_dir)
-    assert len(ds) == 100
-    # sample from a later shard (index past the first shard boundary)
-    g, v, n = ds[95]
-    assert g.shape == (8,) and v.shape == (8,) and int(n) == 8
-    # every index is retrievable
-    for i in (0, 29, 30, 59, 60, 99):
-        gi, vi, ni = ds[i]
-        assert gi.shape == (8,)
+def test_windowed_loader_samples_different_windows():
+    cells = SyntheticHVGCells(n_cells=64, hvg_n=48, seed=0).matrix()
+    esm2, ctx = synthetic_priors(48, 16, 8, seed=0)
+    loader = WindowedJEPALoader(cells, esm2, ctx, batch_size=8, window=10, seed=0)
+    it = iter(loader)
+    _, e0, _ = next(it)
+    _, e1, _ = next(it)
+    # different gene windows -> different prior rows (with overwhelming probability)
+    assert not torch.allclose(e0, e1)
 
 
-def test_build_cell_loader_yields_batches():
-    class _Cfg:
-        batch_size = 8
+def test_cell_cache_is_truly_memmapped(tmp_path):
+    """Regression: the cache must memory-map (np.memmap), not load fully into RAM."""
+    mat = SyntheticHVGCells(n_cells=250, hvg_n=48, seed=1).matrix()
+    write_cell_cache(tmp_path, mat, shard_size=100)
+    cache = CellCache(tmp_path)
+    assert len(cache) == 250
+    assert isinstance(cache._shard(0), np.memmap), "shards must be real memmaps"
 
-    ds = SyntheticCellDataset(n_cells=64, n_genes=48, max_genes=10, seed=0)
-    loader = build_cell_loader(_Cfg(), dataset=ds)
-    gene_ids, values, kpm = next(iter(loader))
-    assert gene_ids.shape[0] == 8
-    assert gene_ids.dtype == torch.long and values.dtype == torch.float32
+
+def test_cell_cache_take_across_shards(tmp_path):
+    mat = SyntheticHVGCells(n_cells=250, hvg_n=48, seed=2).matrix()
+    write_cell_cache(tmp_path, mat, shard_size=100)
+    cache = CellCache(tmp_path)
+    # rows spanning shard boundaries (99|100, 199|200) must match the source matrix
+    idx = np.array([0, 99, 100, 199, 200, 249])
+    got = cache.take(idx)
+    assert np.allclose(got, mat[idx])
+
+
+def test_build_cell_loader_with_injected_arrays():
+    cells = SyntheticHVGCells(n_cells=64, hvg_n=48, seed=0).matrix()
+    esm2, ctx = synthetic_priors(48, 16, 8, seed=0)
+    loader = build_cell_loader(_Cfg(), cells=cells, esm2=esm2, ctx=ctx)
+    values, e, c = next(iter(loader))
+    assert values.shape[0] == 8 and e.shape == (10, 16)
+
+
+def test_loader_reads_from_disk_cache(tmp_path):
+    mat = SyntheticHVGCells(n_cells=80, hvg_n=48, seed=3).matrix()
+    write_cell_cache(tmp_path, mat, shard_size=40)
+    cache = CellCache(tmp_path)
+    esm2, ctx = synthetic_priors(48, 16, 8, seed=3)
+    loader = build_cell_loader(_Cfg(), cells=cache, esm2=esm2, ctx=ctx)
+    values, _, _ = next(iter(loader))
+    assert values.shape == (8, 10)
