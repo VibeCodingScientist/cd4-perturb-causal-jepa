@@ -51,6 +51,7 @@ def control_profile(train_pb: Optional[pd.DataFrame] = None) -> np.ndarray:
 
 
 def _write_and_score(pred: pd.DataFrame, split: str, model_name: str, record: bool):
+    C.RUNS_DIR.mkdir(parents=True, exist_ok=True)
     pred.to_parquet(C.run_path(model_name, split))
     if record:
         return ev.evaluate_and_record(pred, split, model_name)

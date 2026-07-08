@@ -254,6 +254,7 @@ def build_from_czi_pseudobulk(
     from . import pseudobulk as pb
     from . import features as feat
 
+    C.ensure_dirs()
     adata = ad.read_h5ad(h5ad_path, backed="r")
     ensure_ensembl_var(adata)  # var_names already Ensembl (tolerates custom spike-ins)
     genes_all = list(adata.var_names)

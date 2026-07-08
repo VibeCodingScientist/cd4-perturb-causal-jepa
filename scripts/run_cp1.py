@@ -23,6 +23,7 @@ SPLITS = (C.SPLIT_GENE, C.SPLIT_CONDITION)
 
 
 def main():
+    C.ensure_dirs()   # runs/, checkpoints/, results/ etc. must exist before any write
     print("=== baselines ===", flush=True)
     b.run_ridge(SPLITS)
     print("ridge done", flush=True)

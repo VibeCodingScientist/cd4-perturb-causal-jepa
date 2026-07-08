@@ -268,6 +268,7 @@ def _run(model_name: str, use_causal_mask: bool, splits: Sequence[str],
     model = _build_model(cfg, use_causal_mask).to(device)
     _train(model, samples, esm2_t, ctx_t, cfg, device)
 
+    C.RUNS_DIR.mkdir(parents=True, exist_ok=True)
     for split in splits:
         pred = _predict_split(model, split, hvg, esm2_t, ctx_t, cfg, device)
         pred.to_parquet(C.run_path(model_name, split))
