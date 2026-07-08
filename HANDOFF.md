@@ -155,3 +155,14 @@ The eval harness, split, features, and encoder are frozen — build against them
 - **Transformer discrimination** is borderline (rank 0.44–0.48). Worth probing whether more
   training / a sharper prediction setup (per-donor control conditioning) lifts it below 0.4.
 - **Ops:** the L4 box is billed hourly — stop it when idle (CP1 done) unless rolling into CP2.
+
+## 8. Supplementary — mechanism recovery (negative result)
+
+Self-contained CPU-only study in [`mechanism/`](mechanism/) — does not touch any CP1/CP2 file. Tests
+whether explicit per-context causal-matrix (`Â_C`) estimation beats correlation baselines for
+cross-context transportability. **Result: FAIL under `P≪G`**, in both a linear/single-perturbation and a
+nonlinear/double-perturbation regime; reported honestly with pre-registered bars. The core finding is
+*why* correlation is hard to beat (Lyapunov sufficiency of the control covariance), plus a standalone
+result that the linear transportability condition degrades AUROC 1.00 → 0.88 under nonlinearity.
+Reproduce: `python run_c4.py && python eval.py && python sensitivity.py` (spike 1);
+`python run_spike2.py && python spike2_diag.py` (spike 2). Full readout: [`mechanism/README.md`](mechanism/README.md).
