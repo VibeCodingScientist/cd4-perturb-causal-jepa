@@ -1,0 +1,16 @@
+{
+  "condition_holdout": "Stim48hr",
+  "contract_version": "1.0.0",
+  "created_utc": "",
+  "data_frozen": false,
+  "doi": "",
+  "donor_probe": "donor_4",
+  "gene_holdout": [],
+  "gene_holdout_fraction": 0.15,
+  "geo": "GSE278572",
+  "hvg_list_path": "split/hvg_3000.txt",
+  "hvg_n": 3000,
+  "schema_version": 1,
+  "seed": 42,
+  "sha256_h5ad": ""
+}
