@@ -96,6 +96,25 @@ def load_manifest() -> "C.SplitManifest":
     return C.SplitManifest.from_dict(json.loads(C.SPLIT_MANIFEST.read_text()))
 
 
+def evaluable_perts(split: str, *, pseudobulk_test: Optional[pd.DataFrame] = None) -> list[str]:
+    """The canonical perturbation set every model predicts for a split, so the benchmark is
+    apples-to-apples: the split's test perturbations whose silenced gene is in the HVG panel.
+
+    The causal transformer represents the perturbed gene as a token in the sequence, so it is
+    intrinsically scoped to HVG-panel perturbations; scoring the baselines on the same set
+    keeps every benchmark row comparable. Falls back to all test perturbations if the HVG list
+    is unavailable (e.g. a bare synthetic run without a frozen split).
+    """
+    perts = list(ground_truth(split, pseudobulk_test=pseudobulk_test).index)
+    try:
+        from . import split as _split
+        panel = set(_split.load_hvg())
+    except Exception:
+        return perts
+    filtered = [p for p in perts if p in panel]
+    return filtered or perts
+
+
 # ---------------------------------------------------------------------------
 # Alignment
 # ---------------------------------------------------------------------------

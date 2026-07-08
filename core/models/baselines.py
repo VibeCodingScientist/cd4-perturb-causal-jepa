@@ -36,8 +36,9 @@ def train_pert_targets(train_pb: Optional[pd.DataFrame] = None) -> pd.DataFrame:
 
 
 def split_test_perts(split: str, pseudobulk_test: Optional[pd.DataFrame] = None) -> List[str]:
-    """Perturbations to predict for a split (defined by the split, not the labels)."""
-    return list(ev.ground_truth(split, pseudobulk_test=pseudobulk_test).index)
+    """The canonical (HVG-panel) perturbations to predict for a split — shared with the causal
+    model so every benchmark row is scored on the same set (see core.eval.evaluable_perts)."""
+    return ev.evaluable_perts(split, pseudobulk_test=pseudobulk_test)
 
 
 def control_profile(train_pb: Optional[pd.DataFrame] = None) -> np.ndarray:
