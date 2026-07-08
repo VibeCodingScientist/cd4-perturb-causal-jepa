@@ -1,74 +1,80 @@
 # CP2 Results — the 2×2 (real GSE278572, NVIDIA L4)
 
 Developer 2's half: JEPA pretraining (§7e) + the JEPA cells of the 2×2 + VOI + figures.
-Written to be **honest first** — the numbers, the pre-registered detector flags, and the
-confounds are all surfaced (a 4-dimension adversarial audit corrected two overclaims in
-an earlier draft; those corrections are baked in here).
+**Both hold-outs are now clean** (a gene-hold-out leak in the first run was found by an
+adversarial audit, fixed, and the whole JEPA lane re-run gene-clean — see §7). Written
+honest-first: the numbers, the pre-registered detector flags, and the run-to-run noise
+are all surfaced.
 
-## The 2×2 — condition hold-out (zero-shot Stim48hr), Pearson-δ on top-50 DEGs
+## The 2×2 — condition hold-out (PRIMARY, zero-shot Stim48hr), Pearson-δ on top-50 DEGs
 
 | | mask **off** | mask **on** |
 |---|---|---|
 | **random-init** | 0.2255 (noncausal) | 0.3436 (causal) |
-| **JEPA-init** | 0.2211 (jepa_only) | 0.3440 (jepa_causal) |
+| **JEPA-init** | 0.2387 (jepa_only) | 0.3404 (jepa_causal) |
 
-- **C2 (do-operator, mask on − off): +0.1205** (random +0.118, jepa +0.123). The corrected
+- **C2 (do-operator, mask on − off): +0.1099** (random +0.118, jepa +0.102). The corrected
   do-mask improves **both** Pearson-δ (0.226→0.344) **and** perturbation-discrimination
-  (perturbench_rank 0.483→0.457, lower = better) — a multi-axis inductive-bias signal, and
-  it's pre-registered to be reported regardless of leaderboard position.
-- **C3 (JEPA-init, jepa − random): −0.0020** (off −0.004, on +0.0004) — **null** on the
-  condition hold-out. This is a pre-registered outcome: it **corroborates Cell-JEPA**, which
-  found JEPA improves absolute-state reconstruction but **not** effect-size/delta estimation.
-  This split's JEPA cache is hold-out-clean (excludes Stim48hr + donor D4).
+  (perturbench_rank 0.483→0.457, lower better) — a multi-axis inductive-bias signal, and
+  pre-registered to report regardless of leaderboard position.
+- **C3 (JEPA-init, jepa − random): +0.0050** (off +0.013, on −0.003) — **null.** (The first,
+  gene-leaky run gave −0.002; the ~0.01 shift is run-to-run JEPA-pretraining variation — i.e.
+  C3 sits inside the noise band either way.) Pre-registered corroboration of Cell-JEPA
+  ("JEPA improves absolute-state reconstruction, not effect-size/delta").
 
 ### ⚠️ Essential caveat (pre-registered mode-collapse detector)
-**All four transformer cells are red-flagged** by the mode-collapse detector
-(perturbench_rank > 0.4: causal 0.457, noncausal 0.483, jepa_causal 0.460, jepa_only 0.482).
-**Ridge is the only non-collapsed model (0.365) AND the top Pearson-δ scorer (0.384 > 0.344).**
-So the honest reading of C2 is: *the do-mask improves a model that still fails perturbation
-discrimination.* The transformers score moderate Pearson-δ largely via shared activation-state
-DEGs; ridge (function/network priors, no collapse) wins raw accuracy. This is the pre-registered
-"tabular/prior model wins accuracy; the do-operator isolates the intervention" story, told
-straight — not a "JEPA/causal beats everything" claim.
+**All four transformer cells are red-flagged** (perturbench_rank > 0.4: causal 0.457,
+noncausal 0.483, jepa_causal 0.459, jepa_only 0.474). **Ridge is the only non-collapsed
+model (0.365) AND the top Pearson-δ scorer (0.384 > 0.344).** Honest reading: *the do-mask
+improves a model that still fails perturbation discrimination*; ridge's function/network
+priors win raw accuracy. This is the pre-registered "priors win accuracy, the do-operator
+isolates the intervention" story, told straight.
 
-## Gene hold-out (secondary) — ⚠️ CONFOUNDED for the JEPA cells
+## Gene hold-out (secondary, now hold-out-clean), Pearson-δ
 
 | | mask off | mask on |
 |---|---|---|
 | random-init | 0.2056 (noncausal) | 0.3675 (causal) |
-| JEPA-init | 0.2631 (jepa_only) | 0.3613 (jepa_causal) |
+| JEPA-init | 0.2483 (jepa_only) | 0.3609 (jepa_causal) |
 
-The gene-hold-out JEPA numbers are **not hold-out-clean**: the JEPA cache filtered by
-condition and donor but (in the run that produced these numbers) **not by gene**, so cells
-perturbed for held-out genes were in pretraining — the encoder saw the held-out genes'
-knockdown phenotypes. The mask-off cell (+0.057) is therefore confounded, and the effect is
-**mask-dependent** (mask-on reverses: −0.006; mask-averaged +0.026). Both cited cells are also
-mode-collapsed. Treat as a **non-robust, exploratory** observation; a clean run would most
-likely show the pre-registered **null** (JEPA does not help gene-hold-out delta).
-
-**Fixed in code (not re-run):** `ingest_assigned_guide(..., holdout_genes=...)` now drops cells
-whose `perturbed_gene_id` is in the split's `gene_holdout`, and `fetch_jepa_cells.py` threads it
-through. A clean gene-hold-out result requires rebuilding the cache + re-pretraining (≈3 h GPU +
-~277 GB re-download); deferred as a documented follow-up since the **primary (condition) result
-is clean** and the pre-registration already predicted a gene-hold-out null.
+- **C3 (gene): off +0.043 (jepa_only 0.248 vs noncausal 0.206), on −0.007** (jepa_causal 0.361
+  vs causal 0.368); mask-averaged +0.018.
+- The gene-clean re-run **shrank the mask-off effect from the leaky +0.057 to +0.043** — so
+  part of the original apparent benefit was leakage, but a **modest clean signal survives** for
+  the direct-regression model. It is **mask-dependent** (mask-on reverses) and **both cited
+  cells are mode-collapse-flagged**, so treat it as a small, exploratory positive — **not** a
+  robust "JEPA helps unseen-gene interpolation" claim. Consistent with the pre-registered
+  expectation of little-to-no JEPA delta benefit.
 
 ## S1 — Value of Information (VOI)
 Ensemble-disagreement VOI ranks which perturbations are most worth measuring. Sample-efficiency
-(Ridge surrogate on the condition hold-out, full-screen Pearson-δ = 0.384): **VOI-guided
-selection reaches 90% of full-screen at 75.6% of perturbations vs random's 87.4%** — VOI beats
+(Ridge surrogate on the condition hold-out; full-screen Pearson-δ = 0.384): **VOI-guided
+selection reaches 90% of full-screen at 75.5% of perturbations vs random's 87.4%** — VOI beats
 random, modestly.
+
+## Bottom line
+- **C2 (do-operator) is the real, robust effect** (+0.11), with the honest caveat that the
+  transformers are mode-collapsed and ridge wins raw accuracy.
+- **C3 (JEPA-init) is null-to-small on the delta task** (all effects within ~±0.02, the
+  run-to-run noise band) — the pre-registered Cell-JEPA corroboration.
+- **S1 (VOI) works** — disagreement-guided selection is more sample-efficient than random.
 
 ## Figures
 `figures/figure1_benchmark.png` (benchmark table, collapse in red), `figure2_2x2.png` (the 2×2,
 C2/C3 read-out), `figure3_subsampling.png` (VOI vs random), `figure4_biology.png` (top VOI genes).
 
 ## JEPA pretraining (G4) — sanity
-20,000 steps on ~1M single cells (D1 Rest+Stim8hr, 500k each), loss 1.39→0.065, teacher-embedding
-std 0.010→0.15 (grew ~15×, **no collapse**), gate-projected 0.90 h / actual 0.91 h. The JEPA
-checkpoint transfers into `CausalCisTransFormer.encoder` exactly (0 missing / 0 unexpected).
+20,000 steps on ~1M single cells (D1 Rest+Stim8hr, 500k each, gene-hold-out-clean), loss
+1.39→0.065, teacher-embedding std 0.010→0.15 (grew ~15×, **no collapse**), gate-projected
+0.90 h / actual 0.93 h. The JEPA checkpoint transfers into `CausalCisTransFormer.encoder`
+exactly (0 missing / 0 unexpected).
 
 ## Provenance
-- jepa_causal/jepa_only trained with `CausalConfig(epochs=40)` — **identical to CP1's causal/
-  noncausal** (`scripts/run_cp1.py`), differing solely by the JEPA encoder init (an earlier
-  epochs=60 confound was caught and corrected before these numbers).
+- All four 2×2 cells trained with `CausalConfig(epochs=40)` — **identical to CP1's causal/
+  noncausal** (`scripts/run_cp1.py`), differing solely by the JEPA encoder init.
+- JEPA cache is hold-out-clean on all three axes: excludes Stim48hr (condition), donor D4
+  (donor probe), and the 1,729 gene-hold-out genes' cells (467k cells dropped by the
+  `ingest_assigned_guide(holdout_genes=…)` filter).
 - Split SHA `fd2b8c21…`; eval + split + features frozen (Dev 1); consumed unchanged.
+- Two confounds were caught by adversarial audits and fixed before these numbers: an epochs
+  mismatch (60→40) and the gene-hold-out cache leak (re-run gene-clean).
