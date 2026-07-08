@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+env/
+# large/shared artifacts live in DATA_ROOT (outside the repo); ignore any local copies
+data/
+runs/
+checkpoints/
+*.h5ad
+*.parquet
+!results/*.csv
+.DS_Store
