@@ -14,7 +14,9 @@ HVG genes with a fetched protein) is logged so the compromise is explicit.
 
 Run on the box:  ./.venv/bin/python scripts/build_priors.py
 """
+import os
 import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import pandas as pd
