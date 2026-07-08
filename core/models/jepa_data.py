@@ -85,7 +85,9 @@ class CellCache:
         manifest_path = self.cells_dir / MANIFEST_NAME
         if manifest_path.exists():
             self.manifest = json.loads(manifest_path.read_text())
-            self.shard_paths = [self.cells_dir / s for s in self.manifest["shards"]]
+            # shard entries are either bare names (str) or provenance dicts {"name",...}
+            names = [s["name"] if isinstance(s, dict) else s for s in self.manifest["shards"]]
+            self.shard_paths = [self.cells_dir / n for n in names]
             self.hvg_n = int(self.manifest["hvg_n"])
         else:
             self.shard_paths = sorted(self.cells_dir.glob(SHARD_GLOB))
@@ -207,57 +209,122 @@ def _load_hvg_order():
 
 
 # ---------------------------------------------------------------------------
-# Task 2: materialize the 1–2M-cell cache using Developer 1's stratified sampler.
+# Task 2: ingest the per-(donor,condition) single-cell files into CELLS_DIR.
+#
+# The single cells live in `s3://.../D{donor}_{condition}.assigned_guide.h5ad`
+# (public, no creds; 110-161 GB EACH). Donor/condition come from the FILENAME, not
+# obs. Disk holds only ~one file at a time, so the box orchestrator
+# (scripts/fetch_jepa_cells.py) does download -> ingest -> delete per file; this
+# module owns the (tested) ingest + append.
+#
+# Per the readme, `.obs` has `low_quality` (filter), `guide_id` ("multi-guide" if
+# ambiguous), `guide_type`; `.var` has `gene_ids` (Ensembl); `.X` is raw UMI counts
+# (CSR). We filter low-quality cells, subsample, normalize log1p-CP10k, and reindex
+# to the frozen HVG panel.
 # ---------------------------------------------------------------------------
-def materialize_cell_cache(config, h5ad_path=None, shard_size: int = 100_000) -> Path:
-    """Draw ~``config.n_cells`` cells from the 22M, stratified over donor x condition,
-    normalize to log1p-CP10k over the frozen HVG panel, and write the ``CELLS_DIR``
-    cache (§7e / §2). Uses Developer 1's ``data.read_backed`` + ``stratified_cell_indices``.
+def _var_ensembl(adata) -> np.ndarray:
+    """Per-var Ensembl id: prefer `.var['gene_ids']`, else the var index."""
+    if "gene_ids" in adata.var.columns:
+        return adata.var["gene_ids"].astype(str).to_numpy()
+    return np.asarray(adata.var_names, dtype=object)
 
-    Requires the raw ``.h5ad`` (a large download); flagged, not run implicitly.
+
+def _as_bool(series) -> np.ndarray:
+    """Robust bool coercion for an obs column that may be bool / 0-1 / 'True'/'False'."""
+    if series.dtype == bool:
+        return series.to_numpy()
+    s = series.astype(str).str.strip().str.lower()
+    return s.isin(["true", "1", "1.0", "yes"]).to_numpy()
+
+
+def ingest_assigned_guide(
+    adata,
+    hvg: list,
+    n_cells: int,
+    seed: int = 42,
+    filter_low_quality: bool = True,
+    chunk: int = 20_000,
+) -> np.ndarray:
+    """Subsample + normalize cells from one `assigned_guide` AnnData to a [k, |HVG|]
+    log1p-CP10k float32 matrix over the frozen HVG panel.
+
+    Works on a backed or in-memory AnnData; reads only the selected rows, in chunks,
+    so the full (possibly 100+ GB) matrix is never densified.
     """
-    from core import contract, data as d1data, split as split_mod
+    obs = adata.obs
+    keep = np.ones(adata.n_obs, dtype=bool)
+    if filter_low_quality and "low_quality" in obs.columns:
+        keep &= ~_as_bool(obs["low_quality"])
+    pool = np.flatnonzero(keep)
+    if len(pool) == 0:
+        raise ValueError("no cells passed the low_quality filter")
+    rng = np.random.default_rng(seed)
+    take = min(n_cells, len(pool))
+    sel = np.sort(rng.choice(pool, size=take, replace=False))
 
-    contract.ensure_dirs()
-    h5ad_path = Path(h5ad_path) if h5ad_path else (contract.RAW_DIR / "GSE278572.h5ad")
-    if not h5ad_path.exists():
-        raise FileNotFoundError(
-            f"raw h5ad not found at {h5ad_path}. The single-cell subsample needs the "
-            "downloaded GSE278572 object (a >5 GB download — flag before fetching)."
-        )
-    adata = d1data.read_backed(h5ad_path)
-    idx = d1data.stratified_cell_indices(
-        adata.obs, config.n_cells, seed=config.seed, strata=("condition", "donor")
-    )
-    hvg = split_mod.load_hvg()
-    # normalize + restrict to HVG columns in chunks (never densify the full matrix)
-    mat = d1data.cells_to_hvg_matrix(adata, idx, hvg) if hasattr(d1data, "cells_to_hvg_matrix") else \
-        _fallback_hvg_matrix(adata, idx, hvg)
-    return write_cell_cache(contract.CELLS_DIR, mat, shard_size=shard_size)
+    ens = _var_ensembl(adata)
+    col = {g: j for j, g in enumerate(ens)}
+    hvg_cols = np.array([col.get(g, -1) for g in hvg])
+    present = hvg_cols >= 0
+    src_cols = hvg_cols[present]
 
-
-def _fallback_hvg_matrix(adata, idx, hvg):
-    """Minimal densify-in-chunks if data.py doesn't expose a helper. log1p-CP10k over HVG."""
-    import numpy as np
-
-    var_names = list(adata.var_names)
-    col = {g: j for j, g in enumerate(var_names)}
-    hvg_cols = [col[g] for g in hvg if g in col]
-    out = np.zeros((len(idx), len(hvg)), dtype=np.float32)
-    idx = np.sort(np.asarray(idx))
-    for i0 in range(0, len(idx), 20_000):
-        sl = idx[i0:i0 + 20_000]
-        block = adata[sl].to_memory().X
-        block = block.toarray() if hasattr(block, "toarray") else np.asarray(block)
-        libsize = block.sum(axis=1, keepdims=True)
-        libsize[libsize == 0] = 1.0
-        block = np.log1p(block / libsize * 1e4)
-        out[i0:i0 + len(sl)] = block[:, hvg_cols].astype(np.float32)
+    out = np.zeros((len(sel), len(hvg)), dtype=np.float32)
+    for i0 in range(0, len(sel), chunk):
+        blk = sel[i0:i0 + chunk]
+        sub = adata[blk]
+        X = sub.to_memory().X if hasattr(sub, "to_memory") else sub.X
+        X = X.toarray() if hasattr(X, "toarray") else np.asarray(X)
+        X = X.astype(np.float32)
+        lib = X.sum(axis=1, keepdims=True)
+        lib[lib == 0] = 1.0
+        Xn = np.log1p(X / lib * 1e4)
+        out[i0:i0 + len(blk)][:, present] = Xn[:, src_cols]
     return out
+
+
+def append_cells_to_cache(cells_dir, matrix: np.ndarray, donor=None, condition=None) -> Path:
+    """Append a [n, HVG] matrix as one more mmap-able shard, recording donor/condition
+    provenance in the manifest. Multiple (donor,condition) files thus stratify the
+    cache by composition (the loader then samples uniformly across cells)."""
+    cells_dir = Path(cells_dir)
+    cells_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = cells_dir / MANIFEST_NAME
+    if manifest_path.exists():
+        man = json.loads(manifest_path.read_text())
+        shards = [s if isinstance(s, dict) else {"name": s} for s in man.get("shards", [])]
+        hvg_n = int(man["hvg_n"])
+        if matrix.shape[1] != hvg_n:
+            raise ValueError(f"matrix has {matrix.shape[1]} genes; cache HVG panel is {hvg_n}")
+    else:
+        man, shards, hvg_n = {}, [], int(matrix.shape[1])
+    name = f"cells_{len(shards):04d}_{donor or 'NA'}_{condition or 'NA'}.npy"
+    np.save(cells_dir / name, np.ascontiguousarray(matrix, dtype=np.float32))
+    shards.append({"name": name, "n": int(matrix.shape[0]), "donor": donor, "condition": condition})
+    man.update({
+        "hvg_n": hvg_n, "dtype": "float32", "shards": shards,
+        "n_cells": int(sum(s["n"] for s in shards)),
+    })
+    manifest_path.write_text(json.dumps(man, indent=2))
+    return cells_dir
+
+
+def ingest_file_to_cache(h5ad_path, hvg, n_cells, donor, condition, cells_dir=None, seed=42) -> int:
+    """Read one assigned_guide h5ad (backed), subsample, and append to CELLS_DIR.
+    Returns the number of cells added. The box orchestrator deletes the raw file after."""
+    import anndata
+
+    from core import contract
+
+    cells_dir = cells_dir or contract.CELLS_DIR
+    adata = anndata.read_h5ad(h5ad_path, backed="r")
+    mat = ingest_assigned_guide(adata, hvg, n_cells, seed=seed)
+    append_cells_to_cache(cells_dir, mat, donor=donor, condition=condition)
+    return int(mat.shape[0])
 
 
 __all__ = [
     "SyntheticHVGCells", "synthetic_priors", "CellCache", "write_cell_cache",
-    "WindowedJEPALoader", "build_cell_loader", "materialize_cell_cache",
+    "WindowedJEPALoader", "build_cell_loader",
+    "ingest_assigned_guide", "append_cells_to_cache", "ingest_file_to_cache",
     "MANIFEST_NAME", "SHARD_GLOB",
 ]
