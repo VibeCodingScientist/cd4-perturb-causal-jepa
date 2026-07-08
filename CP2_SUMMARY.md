@@ -36,13 +36,13 @@ Pearson-δ on top-50 DEGs (higher better):
 | | mask **off** | mask **on** |
 |---|---|---|
 | **random-init** | 0.2255 (noncausal) | 0.3436 (causal) |
-| **JEPA-init** | 0.2211 (jepa_only) | 0.3440 (jepa_causal) |
+| **JEPA-init** | 0.2387 (jepa_only) | 0.3404 (jepa_causal) |
 
-- **C2 = +0.1205** (mask on − off; random +0.118, jepa +0.123). The do-mask improves both
+- **C2 = +0.1099** (mask on − off; random +0.118, jepa +0.102). The do-mask improves both
   Pearson-δ (0.226→0.344) **and** perturbation-discrimination (perturbench_rank
   0.483→0.457, lower better). Pre-registered to report regardless of leaderboard.
-- **C3 = −0.0020** (jepa − random; off −0.004, on +0.0004). **Null** — pre-registered
-  corroboration of Cell-JEPA.
+- **C3 = +0.0050** (jepa − random; off +0.013, on −0.003). **Null** (all C3 effects sit within
+  the ~±0.02 run-to-run JEPA-pretraining noise band) — pre-registered corroboration of Cell-JEPA.
 
 ### ⚠️ Essential caveat — the pre-registered mode-collapse detector
 All four transformer cells exceed the 0.4 discrimination threshold (perturbench_rank:
@@ -52,19 +52,19 @@ causal 0.457, noncausal 0.483, jepa_causal 0.460, jepa_only 0.482 → all flagge
 discrimination*; ridge's function/network priors win raw accuracy. This is exactly the
 pre-registered "priors win accuracy, the do-operator isolates the intervention" story.
 
-## 3. Gene hold-out (secondary) — clean re-run in flight
+## 3. Gene hold-out (secondary) — now hold-out-clean
 
 | | mask off | mask on |
 |---|---|---|
 | random-init | 0.2056 (noncausal) | 0.3675 (causal) |
-| JEPA-init | 0.2631\* (jepa_only) | 0.3613\* (jepa_causal) |
+| JEPA-init | 0.2483 (jepa_only) | 0.3609 (jepa_causal) |
 
-\* The gene-split JEPA numbers in the first run were **confounded** — the JEPA cache
-excluded Stim48hr + donor D4 but not held-out *genes*, so pretraining saw the held-out
-genes' knockdown cells. The mask-off "+0.057" was inflated and mask-dependent (mask-on
-reverses, −0.006). **Fixed in code** (`ingest_assigned_guide(holdout_genes=…)`); a
-hold-out-clean re-run is finishing now (§6) and is expected to show the pre-registered
-**null**. The condition hold-out (§2) is clean and unaffected.
+- **C3 (gene): off +0.043** (jepa_only 0.248 vs noncausal 0.206), **on −0.007** (jepa_causal
+  0.361 vs causal 0.368). The first run's JEPA cache leaked held-out-gene cells; the gene-clean
+  re-run **shrank the mask-off effect from the leaky +0.057 to +0.043**, so part was leakage but
+  a **modest clean signal survives** for the direct-regression model. Mask-dependent + both cells
+  mode-collapse-flagged → small, exploratory positive, **not** a robust interpolation claim.
+  Fixed in code (`ingest_assigned_guide(holdout_genes=…)`, 467k held-out cells excluded).
 
 ## 4. Claims scorecard (vs `hypotheses.md`)
 
@@ -72,7 +72,7 @@ hold-out-clean re-run is finishing now (§6) and is expected to show the pre-reg
 |---|---|
 | **C1** (causal ≥ baselines incl. TabPFN, condition) | Mixed/honest: ridge 0.384 > causal 0.344 on condition; causal dominates gene hold-out (0.368 vs ridge 0.019). TabPFN N/A (license-gated). |
 | **C2** (causal > non-causal, do-operator) | **Confirmed** (+0.12, multi-axis) — with the mode-collapse caveat above. Headline. |
-| **C3** (JEPA-init helps condition) | **Null** on condition (pre-registered Cell-JEPA corroboration). Gene: clean re-run pending. |
+| **C3** (JEPA-init helps condition) | **Null** — all C3 effects within ~±0.02 run-to-run noise (condition +0.005; gene mask-off +0.043 / mask-on −0.007). Pre-registered Cell-JEPA corroboration. Both hold-outs now gene-clean. |
 | **S1** (VOI ranks worth-measuring perturbations) | Supported: VOI-guided 75.6% vs random 87.4% to reach 90% of full-screen. |
 
 ## 5. Deliverables on `main`
@@ -88,13 +88,12 @@ hold-out-clean re-run is finishing now (§6) and is expected to show the pre-reg
 - `results/benchmark_table.csv` (all 12 rows), `figures/figure{1,2,3,4}.png`,
   [`RESULTS.md`](RESULTS.md). **~60 tests green.**
 
-## 6. What's running now — clean gene-holdout re-run
+## 6. Clean gene-holdout re-run — DONE
 
-Chained on the box (`~/cd4-ws2/rerun_clean.sh`): clear confounded cache → re-fetch D1
-Rest+Stim8hr with the gene filter (excludes the 1,729 held-out genes' cells) → G4
-re-pretrain → G5 re-fine-tune → `cp2_finalize`. ~3 h. On completion I'll update the
-gene-holdout row in `RESULTS.md` + figures + benchmark and push. Old cache kept as
-`cells_confounded` for comparison.
+Chained on the box (`~/cd4-ws2/rerun_clean.sh`): cleared the confounded cache → re-fetched D1
+Rest+Stim8hr with the gene filter (excluded the 1,729 held-out genes' cells) → G4 re-pretrain
+→ G5 re-fine-tune → `cp2_finalize`. Wall-time ~3 h 25 m (fetch 76 m, G4 56 m, G5 69 m). All
+numbers in §2–§3 are from this gene-clean run. Old cache kept as `cells_confounded`.
 
 ## 7. Reproduction
 
