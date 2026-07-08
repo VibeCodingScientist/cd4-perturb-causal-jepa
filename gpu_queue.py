@@ -49,8 +49,21 @@ def _log(msg: str) -> None:
 # ---------------------------------------------------------------------------
 # Lock
 # ---------------------------------------------------------------------------
+def _pid_alive(pid, host) -> bool:
+    """Best-effort liveness. A pid on ANOTHER host can't be checked -> assume alive."""
+    if host != socket.gethostname():
+        return True
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
 def acquire_lock(*, poll: float = 1.0, timeout: Optional[float] = None) -> bool:
-    """Blocking atomic lock acquire (O_EXCL). Returns False only on timeout."""
+    """Blocking atomic lock acquire (O_EXCL). Reclaims a lock whose holder process is dead
+    on this host (crash/SIGKILL) so it can't permanently starve the queue. Returns False
+    only on timeout."""
     C.GPU_LOCK.parent.mkdir(parents=True, exist_ok=True)
     start = time.time()
     while True:
@@ -62,6 +75,11 @@ def acquire_lock(*, poll: float = 1.0, timeout: Optional[float] = None) -> bool:
             os.close(fd)
             return True
         except FileExistsError:
+            h = lock_holder()
+            if h and h.get("pid") != "?" and not _pid_alive(h.get("pid"), h.get("host")):
+                _log(f"reclaiming stale GPU lock from dead holder {h.get('pid')}@{h.get('host')}")
+                release_lock()
+                continue
             if timeout is not None and time.time() - start > timeout:
                 return False
             time.sleep(poll)
@@ -75,10 +93,14 @@ def release_lock() -> None:
 
 
 def lock_holder() -> Optional[dict]:
+    """The lock's EXISTENCE is the source of truth for held-vs-free; the JSON only adds detail.
+    A present-but-unparseable lock (holder mid-write) still reads as HELD."""
+    if not C.GPU_LOCK.exists():
+        return None
     try:
         return json.loads(C.GPU_LOCK.read_text())
-    except (FileNotFoundError, json.JSONDecodeError):
-        return None
+    except (json.JSONDecodeError, FileNotFoundError):
+        return {"pid": "?", "host": "?", "note": "held (metadata not yet written)"}
 
 
 # ---------------------------------------------------------------------------
@@ -90,26 +112,38 @@ class Request:
     priority: int
     t: float
     path: Path
+    pid: object = None
+    host: object = None
 
 
 def _enqueue(job: str) -> Request:
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     t = time.time()
     prio = C.gpu_job_priority(job)
+    host = socket.gethostname()
     path = QUEUE_DIR / f"{prio:02d}_{job}_{os.getpid()}_{int(t*1000)}.json"
-    path.write_text(json.dumps({"job": job, "priority": prio, "t": t, "pid": os.getpid()}))
-    return Request(job, prio, t, path)
+    path.write_text(json.dumps(
+        {"job": job, "priority": prio, "t": t, "pid": os.getpid(), "host": host}))
+    return Request(job, prio, t, path, os.getpid(), host)
 
 
 def pending() -> List[Request]:
+    """Pending requests in §6 priority order. Requests whose submitter process is dead on
+    this host (crashed before running) are reclaimed so they can't starve the queue."""
     if not QUEUE_DIR.exists():
         return []
     out = []
     for p in QUEUE_DIR.glob("*.json"):
         try:
             d = json.loads(p.read_text())
-            out.append(Request(d["job"], d["priority"], d["t"], p))
+            pid, host = d.get("pid"), d.get("host")
+            if pid is not None and not _pid_alive(pid, host):
+                p.unlink(missing_ok=True)   # dead submitter -> drop stale request
+                continue
+            out.append(Request(d["job"], d["priority"], d["t"], p, pid, host))
         except (json.JSONDecodeError, KeyError):
+            continue
+        except FileNotFoundError:
             continue
     return sorted(out, key=lambda r: (r.priority, r.t))
 
@@ -157,12 +191,16 @@ def _job_esm2(**kw):
 
 def _job_causal(**kw):
     from core.models import causal_cistransformer as cc
-    cc.run_causal()
+    cfg = kw.get("cfg") or cc.CausalConfig()
+    _, cfg = cc.epoch1_gate(cfg, True, SLOT_HOURS["causal"])   # §6 gate -> may swap to fallback
+    cc.run_causal(cfg=cfg)
 
 
 def _job_noncausal(**kw):
     from core.models import causal_cistransformer as cc
-    cc.run_noncausal()
+    cfg = kw.get("cfg") or cc.CausalConfig()
+    _, cfg = cc.epoch1_gate(cfg, False, SLOT_HOURS["noncausal"])
+    cc.run_noncausal(cfg=cfg)
 
 
 def _job_dev2(name: str):

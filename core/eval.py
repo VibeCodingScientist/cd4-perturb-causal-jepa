@@ -145,6 +145,8 @@ def _pearson_delta_topk(P: np.ndarray, T: np.ndarray, k: int) -> float:
     for i in range(P.shape[0]):
         idx = _topk_idx(T[i], k)
         pt, tt = P[i, idx], T[i, idx]
+        if not (np.isfinite(pt).all() and np.isfinite(tt).all()):
+            continue  # non-finite prediction -> skip this perturbation (NaN-scored, not a crash)
         if np.std(pt) < 1e-12 or np.std(tt) < 1e-12:
             continue  # undefined correlation (constant vector)
         vals.append(pearsonr(pt, tt)[0])
@@ -156,6 +158,8 @@ def _des(P: np.ndarray, T: np.ndarray, k: int) -> float:
     vals = []
     for i in range(P.shape[0]):
         idx = _topk_idx(T[i], k)
+        if not np.isfinite(P[i, idx]).all():
+            continue
         sp, st = np.sign(P[i, idx]), np.sign(T[i, idx])
         nz = st != 0
         if nz.sum() == 0:
@@ -175,6 +179,8 @@ def _perturbench_rank(P: np.ndarray, T: np.ndarray) -> float:
     n = P.shape[0]
     if n < 2:
         return float("nan")
+    if not (np.isfinite(P).all() and np.isfinite(T).all()):
+        return float("nan")  # non-finite -> undefined discrimination (NaN, not garbage)
     # d[i,j] = || P_i - T_j ||_2
     # (P_i·P_i) - 2 P_i·T_j + (T_j·T_j)
     PP = np.einsum("ij,ij->i", P, P)[:, None]
@@ -191,6 +197,9 @@ def _perturbench_rank(P: np.ndarray, T: np.ndarray) -> float:
 
 
 def _mae(P: np.ndarray, T: np.ndarray) -> float:
+    if not (np.isfinite(P).all() and np.isfinite(T).all()):
+        d = np.abs(P - T)
+        return float(np.nanmean(d[np.isfinite(d)])) if np.isfinite(d).any() else float("nan")
     return float(np.mean(np.abs(P - T)))
 
 
@@ -220,18 +229,23 @@ def _auprc(P: np.ndarray, T: np.ndarray, k: int) -> float:
     vals = []
     n_gene = T.shape[1]
     for i in range(P.shape[0]):
+        scores = np.abs(P[i])
+        if not np.isfinite(scores).all():
+            continue  # average_precision_score raises on NaN/inf -> skip this perturbation
         idx = _topk_idx(T[i], k)
         y = np.zeros(n_gene, dtype=int)
         y[idx] = 1
         if y.sum() == 0 or y.sum() == n_gene:
             continue
-        vals.append(average_precision_score(y, np.abs(P[i])))
+        vals.append(average_precision_score(y, scores))
     return float(np.mean(vals)) if vals else float("nan")
 
 
 def _edistance(P: np.ndarray, T: np.ndarray) -> float:
     """Energy distance between the predicted-delta and true-delta point clouds
     (across perturbations). LOWER better; 0 iff the two clouds coincide."""
+    if not (np.isfinite(P).all() and np.isfinite(T).all()):
+        return float("nan")
     def _mean_pairwise(A, B):
         # mean Euclidean distance between rows of A and rows of B
         AA = np.einsum("ij,ij->i", A, A)[:, None]

@@ -97,6 +97,12 @@ def write_synthetic(
     from . import pseudobulk as pb
     from . import features as feat
 
+    # Self-sandbox: a synthetic fixture must NEVER overwrite the repo's committed split. Point
+    # the committed-artifact paths at DATA_ROOT (env-controlled via CD4_DATA_ROOT) so callers
+    # that forget to redirect them cannot clobber split_manifest.json / the HVG list.
+    C.SPLIT_MANIFEST = C.DATA_ROOT / "split_manifest.json"
+    C.HVG_LIST_PATH = C.DATA_ROOT / "split" / "hvg_3000.txt"
+
     C.ensure_dirs()
     genes = _gene_ids(n_genes)
     perturbed = genes[:n_perts]

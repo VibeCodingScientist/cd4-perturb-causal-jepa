@@ -101,15 +101,21 @@ def normalize_obs(adata, symbol_to_ensembl: Optional[Dict[str, str]] = None) -> 
 
 
 def ensure_ensembl_var(adata, symbol_to_ensembl: Optional[Dict[str, str]] = None) -> None:
-    """Ensure var_names are Ensembl ids. If they are symbols and a map is given, translate;
-    drop genes with no mapping. No-op if already ENSG."""
+    """Ensure var_names are Ensembl ids. If they are symbols and a map is given, RENAME them
+    in place (unmapped symbols kept as-is; HVG selection later picks only ENSG names). No-op if
+    already ENSG. Rename-only avoids an inplace var subset, which is fragile on a backed AnnData;
+    prefer a `gene_ids` column if the raw object carries one."""
     if all(str(v).startswith("ENSG") for v in adata.var_names[:20]):
         return
-    if not symbol_to_ensembl:
-        raise ValueError("var_names are not Ensembl and no symbol->ENSG map was provided")
-    keep = [v in symbol_to_ensembl for v in adata.var_names]
-    adata._inplace_subset_var(np.asarray(keep))
-    adata.var_names = [symbol_to_ensembl[v] for v in adata.var_names]
+    if "gene_ids" in adata.var.columns and all(
+        str(v).startswith("ENSG") for v in adata.var["gene_ids"][:20]
+    ):
+        adata.var_names = list(adata.var["gene_ids"])
+    elif symbol_to_ensembl:
+        adata.var_names = [symbol_to_ensembl.get(str(v), str(v)) for v in adata.var_names]
+    else:
+        raise ValueError("var_names are not Ensembl and no symbol->ENSG map or gene_ids column")
+    adata.var_names_make_unique()
 
 
 # ---------------------------------------------------------------------------
@@ -168,6 +174,112 @@ def perturbed_genes(adata) -> List[str]:
 
 
 # ---------------------------------------------------------------------------
+# CZI pre-computed pseudobulk adapter (the CP1 data path)
+# ---------------------------------------------------------------------------
+# The CZI Virtual Cells mirror ships `GWCD4i.pseudobulk_merged.h5ad` (44.6 GB): one row per
+# (guide, donor, culture_condition), X = summed UMI counts over 18,129 genes. CP1 (baselines +
+# causal) runs on pseudobulk deltas, so we adapt this file directly instead of streaming the
+# ~1.7 TB of single cells (that is the JEPA lane's job). obs columns are documented in the
+# dataset's data_sharing_readme.md.
+def czi_obs_to_canonical(obs: pd.DataFrame) -> pd.DataFrame:
+    """Map CZI pseudobulk obs -> canonical (pert_id, condition, donor).
+
+    pert_id = perturbed_gene_id (Ensembl) for targeting guides, CONTROL_PERT_ID for
+    non-targeting. Pure/testable (no anndata)."""
+    gtype = obs["guide_type"].astype(str).str.lower()
+    is_ntc = gtype.str.contains("non") & gtype.str.contains("target")
+    gid = obs["perturbed_gene_id"].astype(str)
+    pert = [C.CONTROL_PERT_ID if ntc else g for ntc, g in zip(is_ntc, gid)]
+    return pd.DataFrame(
+        {"pert_id": pert,
+         "condition": [_canon_condition(v) for v in obs["culture_condition"]],
+         "donor": [_canon_donor(v) for v in obs["donor_id"]]},
+        index=obs.index,
+    )
+
+
+def normalize_pseudobulk_counts(X: np.ndarray, target_sum: float = 1e4) -> np.ndarray:
+    """Summed-UMI-count pseudobulk -> log1p CP10k, per row. Pure/testable."""
+    X = np.asarray(X, dtype=np.float64)
+    tot = X.sum(axis=1, keepdims=True)
+    tot[tot == 0] = 1.0
+    return np.log1p(X / tot * target_sum)
+
+
+def _czi_quality_mask(obs: pd.DataFrame) -> np.ndarray:
+    """Keep quality pseudobulks (targeting rows via keep_for_DE; controls via keep_min_cells)."""
+    n = len(obs)
+    if "keep_min_cells" not in obs.columns:
+        return np.ones(n, dtype=bool)
+    keep_min = obs["keep_min_cells"].to_numpy(dtype=bool)
+    keep_total = obs["keep_total_counts"].to_numpy(dtype=bool) if "keep_total_counts" in obs else np.ones(n, bool)
+    base = keep_min & keep_total
+    gtype = obs["guide_type"].astype(str).str.lower()
+    is_ntc = (gtype.str.contains("non") & gtype.str.contains("target")).to_numpy()
+    if "keep_for_DE" in obs.columns:
+        keep_de = obs["keep_for_DE"].to_numpy(dtype=bool)
+        return np.where(is_ntc, base, base & keep_de)
+    return base
+
+
+def build_from_czi_pseudobulk(
+    h5ad_path,
+    *,
+    doi: str = "",
+    hvg_subsample: int = 20_000,
+    chunk: int = 20_000,
+    quality_filter: bool = True,
+) -> None:
+    """CP1 Lane-C build from the CZI pseudobulk h5ad: normalize per-guide profiles, average
+    guides -> per (gene, condition, donor), select HVG, freeze the split, write pseudobulk +
+    DEG-frequency. Streams in chunks (never densifies the whole 44 GB file at once).
+    """
+    from pathlib import Path
+    import anndata as ad
+    from . import split as split_mod
+    from . import pseudobulk as pb
+    from . import features as feat
+
+    adata = ad.read_h5ad(h5ad_path, backed="r")
+    ensure_ensembl_var(adata)  # var_names <- gene_ids (Ensembl)
+    genes_all = list(adata.var_names)
+    n = adata.n_obs
+    qmask_all = _czi_quality_mask(adata.obs) if quality_filter else np.ones(n, dtype=bool)
+
+    # HVG on a normalized subsample of quality pseudobulks
+    keep_pos = np.where(qmask_all)[0]
+    rng = np.random.default_rng(C.SPLIT_SEED)
+    sub_pos = np.sort(rng.choice(keep_pos, size=min(hvg_subsample, len(keep_pos)), replace=False))
+    sub = adata[sub_pos].to_memory()
+    subX = sub.X.toarray() if hasattr(sub.X, "toarray") else np.asarray(sub.X)
+    import scanpy as sc
+    sub.X = normalize_pseudobulk_counts(subX)
+    sc.pp.highly_variable_genes(sub, n_top_genes=C.HVG_N, flavor="seurat")
+    hvg = list(sub.var_names[sub.var["highly_variable"].to_numpy()])[:C.HVG_N]
+    gene_pos = [genes_all.index(g) for g in hvg]
+
+    # Stream: average NORMALIZED guide-profiles into per (pert,cond,donor) pseudobulk
+    acc = pb.PseudobulkAccumulator(hvg)
+    for start in range(0, n, chunk):
+        stop = min(start + chunk, n)
+        m = qmask_all[start:stop]
+        if not m.any():
+            continue
+        sl = adata[start:stop]
+        Xc = sl.X[:, gene_pos]
+        Xc = Xc.toarray() if hasattr(Xc, "toarray") else np.asarray(Xc)
+        Xc = normalize_pseudobulk_counts(Xc)[m]
+        obs_c = czi_obs_to_canonical(sl.obs).reset_index(drop=True)[m]
+        acc.add(obs_c, Xc)
+
+    expr = acc.result()
+    perts = sorted(set(expr.index.get_level_values("pert_id")) - {C.CONTROL_PERT_ID})
+    man = split_mod.freeze(perturbed_genes=perts, hvg_genes=hvg, h5ad_path=Path(h5ad_path), doi=doi)
+    pb.build_and_write(expr, man)
+    feat.build_and_write_deg_freq()
+
+
+# ---------------------------------------------------------------------------
 # Orchestration (box entrypoint for the CP1 Lane-C core build)
 # ---------------------------------------------------------------------------
 def prepare_core(
@@ -201,6 +313,6 @@ def prepare_core(
     genes = perturbed_genes(adata)
     man = split_mod.freeze(perturbed_genes=genes, hvg_genes=hvg, h5ad_path=Path(h5ad_path), doi=doi)
 
-    # Pseudobulk (streamed) + DEG-frequency
-    pb.build_from_anndata(h5ad_path, hvg, man)
+    # Pseudobulk (streamed from the NORMALIZED in-memory object) + DEG-frequency
+    pb.build_from_anndata(adata, hvg, man)
     feat.build_and_write_deg_freq()

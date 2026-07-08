@@ -181,7 +181,9 @@ def run_tabpfn(splits: Sequence[str] = C.SPLITS, *, n_targets: int = C.TOP_DEG_N
     deg_dim = deg.shape[1]
     pca_dim = max(2, max_features - deg_dim)
     Xesm_tr = esm2.reindex(y.index).fillna(0.0).to_numpy()
-    pca = PCA(n_components=min(pca_dim, Xesm_tr.shape[1]), random_state=C.SPLIT_SEED).fit(Xesm_tr)
+    # n_components must not exceed min(n_features, n_samples), else PCA.fit raises
+    n_comp = min(pca_dim, Xesm_tr.shape[1], Xesm_tr.shape[0])
+    pca = PCA(n_components=n_comp, random_state=C.SPLIT_SEED).fit(Xesm_tr)
     deg_global = deg.mean(axis=0).to_numpy()  # constant context block
 
     def feats(perts):
