@@ -42,44 +42,35 @@ python -c "from core import data; data.build_from_czi_pseudobulk('$CD4_DATA_ROOT
 python -m core.split            # prints the frozen split summary; commit split_manifest.json + split/hvg_3000.txt
 ```
 
-## 4. Gene-token priors (features)
-Two priors feed every model (ESM-2 function prior + a regulatory/context prior). Pick one path:
-
-**A. ESM-2 (job G1, GPU) + node2vec context prior.** Requires a gene→protein-sequence map and a
-STRING graph:
+## 4. Gene-token priors (features, job G1, GPU)
 ```bash
-# prepare esm2.parquet (mean-pooled ESM-2 650M over each HVG gene's protein) via the queue
-python gpu_queue.py submit esm2       # reads $CD4_DATA_ROOT/raw/gene_sequences.parquet
-# context_prior.parquet from node2vec over a downloaded human STRING edge list
+./.venv/bin/python scripts/build_priors.py
 ```
-**B. Fast fallback (recommended to unblock CP1).** Use GenePT precomputed gene embeddings for
-both priors (PCA to ESM2_DIM / CONTEXT_PRIOR_DIM). Instant, no sequence fetching. See
-`core.features` — wire `build_esm2` fallback / `build_context_prior`.
+This downloads the bulk Ensembl human peptide FASTA once (~15 MB), maps each HVG gene to its
+longest protein (≈99.8% coverage on the real panel), embeds with ESM-2 650M on the GPU
+(~14 min on an L4), and writes `esm2.parquet` (1280-d) + `context_prior.parquet` (a 512-d PCA
+projection). The plan's node2vec-over-STRING network prior is wired
+(`core.features.build_context_prior_node2vec`) as a follow-up; the ESM-2 function prior is the
+one that matters for zero-shot generalization to unseen genes.
 
-> The gene-token prior is not the headline claim (the do-operator is); fallback B is fine for CP1.
-> The exact prep script is finalized interactively on the box against the real gene panel.
+> Do NOT use `gget.seq` for the whole panel — 3000 per-gene Ensembl queries stall. The bulk
+> FASTA is one request.
 
-## 5. Run CP1 (baselines on CPU, transformers via the serial GPU queue)
+## 5. Run CP1 (baselines + causal + non-causal)
 ```bash
-# baselines (CPU; TabPFN/FCN use GPU if present)
-python -c "from core.models import baselines as b; b.run_ridge(); b.run_tabpfn(); b.run_fcn()"
-# causal + non-causal through the single-GPU serial queue (epoch-1 gate runs first)
-python gpu_queue.py submit causal
-python gpu_queue.py submit noncausal
-# score everything into results/benchmark_table.csv (+ full 8-metric appendix)
-python -c "
-from core import eval as ev, contract as C
-for m in C.CP1_MODELS:
-    for s in C.SPLITS:
-        ev.score_run_file(m, s)
-"
-cat results/benchmark_table.csv
+./.venv/bin/python scripts/run_cp1.py     # Ridge + FCN + causal + non-causal -> benchmark_table.csv
 ```
-
 Or the whole thing via Snakemake:
 ```bash
 snakemake --cores all --config raw_h5ad="$CD4_DATA_ROOT/raw/GWCD4i.pseudobulk_merged.h5ad"
 ```
+
+> **TabPFN gate.** `tabpfn>=8` downloads license-gated Prior-Labs models (a one-time browser
+> license acceptance on Hugging Face); older ungated versions break the sklearn/scipy stack.
+> On a fresh headless box TabPFN is therefore marked N/A — accept the Prior-Labs license with
+> your HF account (one click) + a token, then `python -c "from core.models import baselines as b;
+> b.run_tabpfn()"` to add its rows. CP1 stands on Ridge (the strong baseline) + FCN + causal +
+> non-causal without it.
 
 ## 6. CP1 done
 `results/benchmark_table.csv` has ridge / tabpfn / fcn / causal / noncausal on the gene and
