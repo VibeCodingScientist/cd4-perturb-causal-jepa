@@ -1,0 +1,13 @@
+name: mechanism-c4
+# CPU-only. No torch, no GPU. Runs the full C4 spike in minutes.
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.10
+  - numpy
+  - scipy
+  - scikit-learn
+  - pandas
+  - matplotlib
+# pip equivalent:
+#   pip install numpy scipy scikit-learn pandas matplotlib

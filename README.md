@@ -161,6 +161,19 @@ concurrency across up to two `git worktree` checkouts that share the one queue.
   demo figures; `snakemake --cores all` end-to-end.
 - **CP3** — reproducibility package tagged; full 8-metric appendix; one-command rerun.
 
+## Supplementary — mechanism recovery
+
+A reproducible synthetic study ([`mechanism/`](mechanism/), CPU-only) testing whether explicit
+per-context causal-matrix (`Â_C`) estimation beats correlation baselines for cross-context
+transportability. **Result: it does not, under `P≪G`** — in either the linear/single-perturbation or
+the nonlinear/double-perturbation regime (pre-registered bar not met → FAIL, honestly reported). It
+documents *why* correlation baselines are so hard to beat on the field's own simulator (the stationary
+covariance solves the Lyapunov equation, so `Σ` is a near-sufficient statistic for `A`), and — a
+standalone positive — how the linear transportability condition itself degrades (AUROC 1.00 → 0.88) as
+the system becomes nonlinear. The transportability signal is real (oracle with true `A` = 1.0) but
+estimation-gated; the one un-tested lever is a materially better estimator. See
+[`mechanism/README.md`](mechanism/README.md).
+
 ## License
 
 [MIT](LICENSE).
