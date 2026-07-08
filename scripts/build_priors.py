@@ -26,30 +26,54 @@ from core import features as feat
 from core import split as split_mod
 
 _AA = set("ACDEFGHIKLMNPQRSTVWY")
+_ENSEMBL_PEP_URL = (
+    "http://ftp.ensembl.org/pub/current_fasta/homo_sapiens/pep/"
+    "Homo_sapiens.GRCh38.pep.all.fa.gz"
+)
+
+
+def _ensure_peptide_fasta():
+    """Download the bulk Ensembl human peptide FASTA once (~15 MB) — one request, reliable
+    (vs 3000 per-gene gget/REST queries, which stall)."""
+    import urllib.request
+    dest = C.RAW_DIR / "Homo_sapiens.GRCh38.pep.all.fa.gz"
+    if not dest.exists() or dest.stat().st_size < 1_000_000:
+        C.RAW_DIR.mkdir(parents=True, exist_ok=True)
+        print(f"[priors] downloading Ensembl peptide FASTA -> {dest}", flush=True)
+        urllib.request.urlretrieve(_ENSEMBL_PEP_URL, dest)
+    return dest
 
 
 def fetch_sequences(genes):
-    """ENSG -> canonical protein sequence via gget. Robust to gget's FASTA-list output and to
-    genes that return no protein (they are simply omitted; the caller zero-fills them)."""
-    import gget
-    hvg_set = set(genes)
-    raw = gget.seq(list(genes), translate=True, verbose=False)
-    # gget.seq returns a flat FASTA-style list: [">header", "SEQ", ">header", "SEQ", ...]
-    seqs = {}
-    i = 0
-    while i < len(raw) - 1:
-        header, seq = str(raw[i]), str(raw[i + 1])
-        if header.startswith(">"):
-            # find the requested gene id mentioned in the header
-            toks = header.lstrip(">").replace(",", " ").split()
-            gid = next((t.split(".")[0] for t in toks if t.split(".")[0] in hvg_set), None)
-            if gid and seq:
-                clean = "".join(ch for ch in seq.upper() if ch in _AA)
-                if clean:
-                    seqs.setdefault(gid, clean)
-            i += 2
-        else:
-            i += 1
+    """ENSG -> canonical (longest) protein sequence, parsed from the bulk Ensembl peptide FASTA.
+
+    Headers look like `>ENSP... pep ... gene:ENSG00000123456.7 ...`; we key by the gene id and
+    keep the longest peptide per gene. Genes with no peptide are omitted (caller zero-fills)."""
+    import gzip
+    fasta = _ensure_peptide_fasta()
+    hvg = set(genes)
+    seqs: dict[str, str] = {}
+    cur_gene, cur = None, []
+
+    def flush():
+        if cur_gene and cur_gene in hvg:
+            s = "".join(ch for ch in "".join(cur).upper() if ch in _AA)
+            if s and (cur_gene not in seqs or len(s) > len(seqs[cur_gene])):
+                seqs[cur_gene] = s
+
+    with gzip.open(fasta, "rt") as f:
+        for line in f:
+            if line.startswith(">"):
+                flush()
+                cur = []
+                cur_gene = None
+                for tok in line.split():
+                    if tok.startswith("gene:"):
+                        cur_gene = tok.split(":", 1)[1].split(".")[0]
+                        break
+            else:
+                cur.append(line.strip())
+        flush()
     return seqs
 
 
