@@ -166,3 +166,9 @@ nonlinear/double-perturbation regime; reported honestly with pre-registered bars
 result that the linear transportability condition degrades AUROC 1.00 → 0.88 under nonlinearity.
 Reproduce: `python run_c4.py && python eval.py && python sensitivity.py` (spike 1);
 `python run_spike2.py && python spike2_diag.py` (spike 2). Full readout: [`mechanism/README.md`](mechanism/README.md).
+
+A third probe — the **C-NL gate** (`python run_cnl_gate.py`) — is the **positive** of the line: on ground
+truth the baseline **third moment predicts the second-order response covariance provably misses** (ΔR²
+≈ +0.6–0.75, CI excluding 0; survives to 1,000 cells with NB emission on). The term is small (~3–4%) but
+structured; the open go/no-go is sizing the analogous residual on real CD4 (within-donor, stratified by
+effect size — the large-effect bin is decision-relevant). Readout: [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).

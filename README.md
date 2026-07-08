@@ -171,8 +171,15 @@ documents *why* correlation baselines are so hard to beat on the field's own sim
 covariance solves the Lyapunov equation, so `Σ` is a near-sufficient statistic for `A`), and — a
 standalone positive — how the linear transportability condition itself degrades (AUROC 1.00 → 0.88) as
 the system becomes nonlinear. The transportability signal is real (oracle with true `A` = 1.0) but
-estimation-gated; the one un-tested lever is a materially better estimator. See
-[`mechanism/README.md`](mechanism/README.md).
+estimation-gated; the one un-tested lever is a materially better estimator.
+
+A **third probe (the C-NL gate) is the positive** of the line: covariance/Lyapunov sufficiency is a
+*second-moment* property, so the one signal it provably cannot carry lives in the third moment. On
+ground truth the baseline **third moment predicts the second-order perturbation response covariance
+misses** — ΔR² ≈ +0.6–0.75 (CI excluding 0), surviving to 1,000 control cells with NB emission on. The
+term is small (~3–4% of the response) but strongly structured; sizing it on real CD4 data is the open
+go/no-go. Provenance-guarded (the third-moment link is an inference from response theory, not a CIPHER
+claim). See [`mechanism/README.md`](mechanism/README.md) and [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).
 
 ## License
 
