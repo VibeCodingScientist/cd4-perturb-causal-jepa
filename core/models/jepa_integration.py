@@ -91,6 +91,12 @@ def finetune_jepa_models(jepa_ckpt=None, splits: Optional[Sequence[str]] = None,
 
     jepa_ckpt = jepa_ckpt or str(contract.checkpoint_path("jepa"))
     splits = list(splits) if splits is not None else list(contract.SPLITS)
+    if cfg is None:
+        # MATCH CP1 EXACTLY. scripts/run_cp1.py trained the random-init causal/noncausal
+        # cells with CausalConfig(epochs=40) (NOT the default 60). The 2x2 is only valid
+        # if jepa_causal/jepa_only use the identical config, differing solely by the JEPA
+        # encoder init — otherwise the C3 contrast is confounded by training length.
+        cfg = cc.CausalConfig(epochs=40)
     out = {}
     for model_name, use_mask in ((contract.MODEL_JEPA_CAUSAL, True), (contract.MODEL_JEPA_ONLY, False)):
         out[model_name] = _run_causal_with_jepa_init(

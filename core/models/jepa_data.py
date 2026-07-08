@@ -222,11 +222,16 @@ def _load_hvg_order():
 # (CSR). We filter low-quality cells, subsample, normalize log1p-CP10k, and reindex
 # to the frozen HVG panel.
 # ---------------------------------------------------------------------------
+def _strip_version(ids) -> np.ndarray:
+    """ENSG00000123456.5 -> ENSG00000123456 so single-cell var ids and the frozen HVG
+    list join even if one carries version suffixes."""
+    return np.array([str(g).split(".", 1)[0] for g in ids], dtype=object)
+
+
 def _var_ensembl(adata) -> np.ndarray:
-    """Per-var Ensembl id: prefer `.var['gene_ids']`, else the var index."""
-    if "gene_ids" in adata.var.columns:
-        return adata.var["gene_ids"].astype(str).to_numpy()
-    return np.asarray(adata.var_names, dtype=object)
+    """Per-var Ensembl id (version-stripped): prefer `.var['gene_ids']`, else var index."""
+    ids = adata.var["gene_ids"] if "gene_ids" in adata.var.columns else adata.var_names
+    return _strip_version(np.asarray(ids))
 
 
 def _as_bool(series) -> np.ndarray:
@@ -243,10 +248,17 @@ def ingest_assigned_guide(
     n_cells: int,
     seed: int = 42,
     filter_low_quality: bool = True,
+    holdout_genes=None,
     chunk: int = 20_000,
+    log_fn=None,
 ) -> np.ndarray:
     """Subsample + normalize cells from one `assigned_guide` AnnData to a [k, |HVG|]
     log1p-CP10k float32 matrix over the frozen HVG panel.
+
+    ``holdout_genes``: Ensembl ids of the gene-hold-out set. Cells whose
+    ``perturbed_gene_id`` is in this set are DROPPED — otherwise JEPA pretraining sees
+    the held-out genes' knockdown phenotypes and the gene-hold-out C3 claim leaks
+    (the condition/donor hold-outs are handled at the file level in fetch_jepa_cells).
 
     Works on a backed or in-memory AnnData; reads only the selected rows, in chunks,
     so the full (possibly 100+ GB) matrix is never densified.
@@ -255,6 +267,13 @@ def ingest_assigned_guide(
     keep = np.ones(adata.n_obs, dtype=bool)
     if filter_low_quality and "low_quality" in obs.columns:
         keep &= ~_as_bool(obs["low_quality"])
+    if holdout_genes and "perturbed_gene_id" in obs.columns:
+        hg = set(_strip_version(list(holdout_genes)).tolist())
+        pg = _strip_version(obs["perturbed_gene_id"].astype(str).to_numpy())
+        n_before = int(keep.sum())
+        keep &= ~np.isin(pg, list(hg))
+        if log_fn is not None:
+            log_fn(f"[ingest] gene-holdout filter: dropped {n_before - int(keep.sum())} held-out-gene cells")
     pool = np.flatnonzero(keep)
     if len(pool) == 0:
         raise ValueError("no cells passed the low_quality filter")
@@ -264,9 +283,12 @@ def ingest_assigned_guide(
 
     ens = _var_ensembl(adata)
     col = {g: j for j, g in enumerate(ens)}
-    hvg_cols = np.array([col.get(g, -1) for g in hvg])
+    hvg_stripped = _strip_version(hvg)
+    hvg_cols = np.array([col.get(g, -1) for g in hvg_stripped])
     present = hvg_cols >= 0
     src_cols = hvg_cols[present]
+    if log_fn is not None:
+        log_fn(f"[ingest] HVG coverage: {int(present.sum())}/{len(hvg)} genes matched in var")
 
     out = np.zeros((len(sel), len(hvg)), dtype=np.float32)
     for i0 in range(0, len(sel), chunk):
@@ -308,7 +330,8 @@ def append_cells_to_cache(cells_dir, matrix: np.ndarray, donor=None, condition=N
     return cells_dir
 
 
-def ingest_file_to_cache(h5ad_path, hvg, n_cells, donor, condition, cells_dir=None, seed=42) -> int:
+def ingest_file_to_cache(h5ad_path, hvg, n_cells, donor, condition, cells_dir=None, seed=42,
+                         holdout_genes=None) -> int:
     """Read one assigned_guide h5ad (backed), subsample, and append to CELLS_DIR.
     Returns the number of cells added. The box orchestrator deletes the raw file after."""
     import anndata
@@ -317,7 +340,7 @@ def ingest_file_to_cache(h5ad_path, hvg, n_cells, donor, condition, cells_dir=No
 
     cells_dir = cells_dir or contract.CELLS_DIR
     adata = anndata.read_h5ad(h5ad_path, backed="r")
-    mat = ingest_assigned_guide(adata, hvg, n_cells, seed=seed)
+    mat = ingest_assigned_guide(adata, hvg, n_cells, seed=seed, holdout_genes=holdout_genes, log_fn=print)
     append_cells_to_cache(cells_dir, mat, donor=donor, condition=condition)
     return int(mat.shape[0])
 

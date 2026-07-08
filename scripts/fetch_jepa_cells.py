@@ -46,16 +46,26 @@ def object_size_bytes(key: str) -> int:
 
 def download(key: str, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run(["aws", "--no-sign-request", "s3", "cp", f"s3://{BUCKET}/{key}", str(dest)])
+    # --only-show-errors: no per-part progress spam (we track progress by polling size)
+    r = subprocess.run(
+        ["aws", "--no-sign-request", "s3", "cp", "--only-show-errors", f"s3://{BUCKET}/{key}", str(dest)]
+    )
     if r.returncode != 0:
         raise RuntimeError(f"download failed for {key}")
 
 
-def load_hvg() -> list:
-    from core import split as split_mod
-
-    if hasattr(split_mod, "load_hvg"):
-        return list(split_mod.load_hvg())
+def load_hvg(hvg_path: str | None = None) -> list:
+    """Frozen HVG gene order. Prefer an explicit --hvg-path (e.g. Dev1's box-local
+    split/hvg_3000.txt, which is untracked so not in this worktree); else core.split;
+    else the contract path."""
+    if hvg_path:
+        return [g.strip() for g in Path(hvg_path).read_text().splitlines() if g.strip()]
+    try:
+        from core import split as split_mod
+        if hasattr(split_mod, "load_hvg"):
+            return list(split_mod.load_hvg())
+    except Exception:
+        pass
     return [g.strip() for g in contract.HVG_LIST_PATH.read_text().splitlines() if g.strip()]
 
 
@@ -67,6 +77,7 @@ def main(argv=None) -> int:
     p.add_argument("--tmp-dir", default=str(contract.RAW_DIR / "_jepa_cells_tmp"))
     p.add_argument("--min-headroom-gb", type=float, default=10.0)
     p.add_argument("--keep-raw", action="store_true", help="do not delete each h5ad after ingest")
+    p.add_argument("--hvg-path", default=None, help="explicit frozen HVG list (Dev1's box-local split/hvg_3000.txt)")
     p.add_argument("--seed", type=int, default=contract.SPLIT_SEED)
     p.add_argument("--dry-run", action="store_true")
     args = p.parse_args(argv)
@@ -99,7 +110,13 @@ def main(argv=None) -> int:
         print(f"[fetch] largest single file {biggest/GB:.1f} GiB; fits one-at-a-time: {ok}")
         return 0
 
-    hvg = load_hvg()
+    hvg = load_hvg(args.hvg_path)
+    print(f"[fetch] HVG panel: {len(hvg)} genes")
+    # Gene-hold-out cells must NOT enter the JEPA cache (else the gene-split C3 claim leaks).
+    import json as _json
+    manifest = _json.loads(contract.SPLIT_MANIFEST.read_text())
+    holdout_genes = manifest.get("gene_holdout", [])
+    print(f"[fetch] gene-holdout: excluding {len(holdout_genes)} held-out genes' cells from the JEPA cache")
     from core.models.jepa_data import ingest_file_to_cache
 
     added_total = 0
@@ -115,7 +132,8 @@ def main(argv=None) -> int:
         print(f"[fetch] ({i}/{len(files)}) downloading {key} ({size/GB:.0f} GiB) ...")
         download(key, dest)
         print(f"[fetch] ingesting {d} {c} ({args.cells_per_file:,} cells) ...")
-        added = ingest_file_to_cache(dest, hvg, args.cells_per_file, donor=d, condition=c, seed=args.seed)
+        added = ingest_file_to_cache(dest, hvg, args.cells_per_file, donor=d, condition=c, seed=args.seed,
+                                     holdout_genes=holdout_genes)
         added_total += added
         if not args.keep_raw:
             dest.unlink(missing_ok=True)

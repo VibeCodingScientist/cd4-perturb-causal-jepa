@@ -23,7 +23,12 @@ def _synthetic_assigned_guide(n_cells=500, n_genes=40, n_low_quality=50, seed=0)
         index=[f"SYM{j}" for j in range(n_genes)],
     )
     lq = np.array([False] * (n_cells - n_low_quality) + [True] * n_low_quality)
-    obs = pd.DataFrame({"low_quality": lq, "guide_id": ["g0"] * n_cells}, index=[f"c{i}" for i in range(n_cells)])
+    # perturbed_gene_id cycles over a small set so holdout filtering is testable
+    pgid = np.array([f"ENSG{900000 + (i % n_genes):06d}" for i in range(n_cells)])
+    obs = pd.DataFrame(
+        {"low_quality": lq, "guide_id": ["g0"] * n_cells, "perturbed_gene_id": pgid},
+        index=[f"c{i}" for i in range(n_cells)],
+    )
     return anndata.AnnData(X=X, obs=obs, var=var)
 
 
@@ -43,6 +48,16 @@ def test_ingest_filters_low_quality():
     # asking for more than the 450 good cells returns exactly the good cells (LQ dropped)
     mat = ingest_assigned_guide(adata, hvg, n_cells=10_000)
     assert mat.shape[0] == 450
+
+
+def test_ingest_drops_gene_holdout_cells():
+    # cells cycle perturbed_gene_id over ENSG900000..; hold out two of them
+    adata = _synthetic_assigned_guide(n_cells=600, n_genes=40, n_low_quality=0)
+    hvg = [f"ENSG{900000 + j:06d}" for j in range(5)]
+    holdout = ["ENSG900003", "ENSG900007"]  # version-suffix-free, matches _strip_version
+    mat = ingest_assigned_guide(adata, hvg, n_cells=10_000, holdout_genes=holdout)
+    # 600 cells, 40 genes cycled -> 15 cells per gene; 2 held-out genes -> 30 cells dropped
+    assert mat.shape[0] == 600 - 30
 
 
 def test_ingest_normalization_is_log1p_cp10k():

@@ -150,3 +150,59 @@ rule runs_2x2:
     """CP2 hook (Developer 2): the JEPA cells of the 2x2 (jepa_only, jepa_causal)."""
     input:
         run_files([C.MODEL_JEPA_ONLY, C.MODEL_JEPA_CAUSAL]),
+
+
+# ---------------------------------------------------------------------------
+# CP2 (Developer 2): JEPA pretraining -> 2x2 JEPA cells -> demo figures.
+# ---------------------------------------------------------------------------
+JEPA_CKPT = str(C.checkpoint_path("jepa"))
+CELLS_MANIFEST = str(C.CELLS_DIR / "manifest.json")
+CP2_FIGURES = [str(C.FIGURES_DIR / f) for f in
+               ("figure1_benchmark.png", "figure2_2x2.png", "figure3_subsampling.png")]
+
+
+rule jepa_cells:
+    """CP2: the single-cell JEPA cache (holdout-clean). FLAGGED out-of-band, like the CP1
+    download: needs the ~1.7 TB per-donor cell h5ads (public S3). Built by
+    scripts/fetch_jepa_cells.py (download -> subsample -> delete, one file at a time;
+    excludes Stim48hr + donor D4 + gene-holdout cells)."""
+    output:
+        CELLS_MANIFEST,
+    run:
+        raise WorkflowError(
+            "JEPA cells are a flagged out-of-band step (like the CP1 data download): run "
+            "`python scripts/fetch_jepa_cells.py --donors D1 [D2 D3] --hvg-path split/hvg_3000.txt` "
+            "(downloads per-donor cell h5ads, subsamples ~1M cells into DATA_ROOT/cells/), then re-run."
+        )
+
+
+rule jepa:
+    """G4: Cell-JEPA pretraining via the serial GPU queue -> checkpoints/jepa_final.pt."""
+    input:
+        FEATURES, cells=CELLS_MANIFEST,
+    output:
+        JEPA_CKPT,
+    shell:
+        "python gpu_queue.py submit jepa"
+
+
+rule jepa_finetune:
+    """G5: init the causal encoder from the JEPA checkpoint + fine-tune (epochs=40, matching
+    CP1's causal/noncausal) -> runs/jepa_only_*, runs/jepa_causal_*."""
+    input:
+        FEATURES, ckpt=JEPA_CKPT, train=str(C.PSEUDOBULK_TRAIN),
+    output:
+        run_files([C.MODEL_JEPA_ONLY, C.MODEL_JEPA_CAUSAL]),
+    shell:
+        "python gpu_queue.py submit jepa_finetune"
+
+
+rule cp2:
+    """CP2 target: score the full 2x2 + VOI + sample-efficiency, render the demo figures."""
+    input:
+        run_files([C.MODEL_NONCAUSAL, C.MODEL_CAUSAL, C.MODEL_JEPA_ONLY, C.MODEL_JEPA_CAUSAL]),
+        bench=str(C.BENCHMARK_TABLE),
+    output:
+        CP2_FIGURES,
+    shell:
+        "python scripts/cp2_finalize.py"
