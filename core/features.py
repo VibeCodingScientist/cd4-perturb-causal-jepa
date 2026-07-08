@@ -102,7 +102,8 @@ def deg_freq_features(
         top_genes = top_deg_genes(qvals)
     top_genes = list(top_genes)
     delta = C.pseudobulk_delta(train_pseudobulk)
-    per_pert = delta.groupby(level="pert_id").mean()
+    # exclude the control so the feature rows match de_significance (which drops it)
+    per_pert = delta.groupby(level="pert_id").mean().drop(index=C.CONTROL_PERT_ID, errors="ignore")
     # restrict to top DE genes; any missing gene -> 0
     feat = per_pert.reindex(columns=top_genes).fillna(0.0)
     feat.index.name = "pert_id"

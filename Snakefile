@@ -22,7 +22,11 @@ import sys
 sys.path.insert(0, os.path.dirname(workflow.snakefile))
 from core import contract as C
 
-RAW_H5AD = config.get("raw_h5ad", str(C.RAW_DIR / "GSE278572.h5ad"))
+# CP1 data source. Default = the CZI pre-computed pseudobulk (44.6 GB), which carries the
+# condition/donor/guide obs and is all CP1 (baselines + causal) needs. Set data_source=cells
+# to instead build pseudobulk by streaming the ~1.7 TB of single cells (the JEPA lane's input).
+DATA_SOURCE = config.get("data_source", "czi_pseudobulk")
+RAW_H5AD = config.get("raw_h5ad", str(C.RAW_DIR / "GWCD4i.pseudobulk_merged.h5ad"))
 
 CP1_MODELS = list(C.CP1_MODELS)           # ridge, tabpfn, fcn, causal, noncausal
 SPLITS = list(C.SPLITS)                    # gene, condition
@@ -40,12 +44,13 @@ rule all:
 
 
 rule data:
-    """Freeze the split + build pseudobulk + DEG-frequency from the raw .h5ad (Lane C).
+    """Freeze the split + build pseudobulk + DEG-frequency (Lane C).
 
-    FLAGGED: the raw download (~tens of GB) is a manual, out-of-band step. Once RAW_H5AD
-    exists this rule runs core.data.prepare_core, which streams the backed object (never
-    densifies 22M cells), freezes split_manifest.json against the file's SHA256, and writes
-    the pseudobulk + DEG-frequency caches.
+    FLAGGED: the download is a manual, out-of-band step (44.6 GB CZI pseudobulk, or the
+    ~1.7 TB of cells). Default `czi_pseudobulk` runs core.data.build_from_czi_pseudobulk
+    (normalize per-guide profiles -> average guides -> per (gene,condition,donor) pseudobulk,
+    HVG, freeze split against the file SHA256). `cells` runs core.data.prepare_core to stream
+    the backed cell object instead.
     """
     input:
         h5ad=RAW_H5AD,
@@ -57,7 +62,10 @@ rule data:
         deg=str(C.DEG_FREQ_CACHE),
     run:
         from core import data
-        data.prepare_core(input.h5ad)
+        if DATA_SOURCE == "cells":
+            data.prepare_core(input.h5ad)
+        else:
+            data.build_from_czi_pseudobulk(input.h5ad)
 
 
 rule esm2:

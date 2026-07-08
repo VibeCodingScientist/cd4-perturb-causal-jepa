@@ -268,12 +268,45 @@ def _run(model_name: str, use_causal_mask: bool, splits: Sequence[str],
     model = _build_model(cfg, use_causal_mask).to(device)
     _train(model, samples, esm2_t, ctx_t, cfg, device)
 
+    C.RUNS_DIR.mkdir(parents=True, exist_ok=True)
     for split in splits:
         pred = _predict_split(model, split, hvg, esm2_t, ctx_t, cfg, device)
         pred.to_parquet(C.run_path(model_name, split))
         if record:
             ev.evaluate_and_record(pred, split, model_name)
     return model
+
+
+# §6/§10 fallback config, applied by the epoch-1 gate when a job would overrun its slot.
+FALLBACK_CONFIG = CausalConfig(d_model=128, n_layers=2, gene_window=1000)
+
+
+def epoch1_gate(cfg: CausalConfig, use_causal_mask: bool, slot_hours: float):
+    """§6 measure-then-extrapolate gate: train 1 epoch, extrapolate to cfg.epochs, and return
+    (fits, cfg_to_use). If the projected wall-time exceeds the slot, return FALLBACK_CONFIG so
+    the job cannot silently eat the GPU queue. Invoked by gpu_queue before full training."""
+    import time
+    from dataclasses import replace
+    import torch
+
+    torch.manual_seed(cfg.seed)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    hvg = split_mod.load_hvg()
+    train_pb = pd.read_parquet(C.PSEUDOBULK_TRAIN)
+    hvg = [g for g in hvg if g in C.pseudobulk_expr(train_pb).columns]
+    samples = _build_samples(train_pb, hvg, cfg)
+    esm2_t, ctx_t = _feature_tensors(hvg, device)
+    model = _build_model(cfg, use_causal_mask).to(device)
+
+    t0 = time.time()
+    _train(model, samples, esm2_t, ctx_t, replace(cfg, epochs=1), device)
+    projected_s = (time.time() - t0) * cfg.epochs
+    fits = projected_s <= slot_hours * 3600
+    label = "causal" if use_causal_mask else "noncausal"
+    print(f"[epoch-1 gate] {label}: 1 epoch measured -> projected {projected_s/3600:.2f}h "
+          f"vs slot {slot_hours:.1f}h ({'OK' if fits else 'OVER BUDGET -> §6 fallback'})",
+          flush=True)
+    return fits, (cfg if fits else FALLBACK_CONFIG)
 
 
 def run_causal(splits: Sequence[str] = C.SPLITS, cfg: Optional[CausalConfig] = None,

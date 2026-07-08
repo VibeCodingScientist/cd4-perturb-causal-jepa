@@ -40,12 +40,12 @@ class PseudobulkAccumulator:
         X = np.asarray(X, dtype=np.float64)
         if X.shape[1] != len(self.genes):
             raise ValueError(f"chunk has {X.shape[1]} genes, expected {len(self.genes)}")
-        keys = list(zip(obs["pert_id"].astype(str),
-                        obs["condition"].astype(str),
-                        obs["donor"].astype(str)))
-        # group rows of this chunk, accumulate
-        order = pd.Series(range(len(keys))).groupby(keys, sort=False)
-        for key, rows in order.groups.items():
+        # Group by the three obs columns directly. (Passing a list of tuples to
+        # Series.groupby makes pandas treat each tuple as a lookup key -> KeyError;
+        # groupby(cols).indices returns tuple-key -> row-positions, which is what we want.)
+        obs3 = obs[["pert_id", "condition", "donor"]].astype(str).reset_index(drop=True)
+        groups = obs3.groupby(["pert_id", "condition", "donor"], sort=False).indices
+        for key, rows in groups.items():
             r = np.asarray(rows, dtype=int)
             s = X[r].sum(axis=0)
             if key in self._sum:
@@ -122,14 +122,20 @@ def build_and_write(expr: pd.DataFrame, man: Optional[C.SplitManifest] = None) -
 
 
 # --- Production data path (backed/chunked AnnData) --------------------------------
-def iter_anndata_chunks(h5ad_path, hvg_genes: Sequence[str], chunk: int = 50_000):
-    """Yield (obs_chunk, X_chunk) over a backed AnnData, restricted to the HVG columns.
+def iter_anndata_chunks(adata, hvg_genes: Sequence[str], chunk: int = 50_000):
+    """Yield (obs_chunk, X_chunk) over an ALREADY-NORMALIZED backed AnnData.
 
-    Lazily imports anndata; never holds more than `chunk` cells dense in memory.
-    Assumes obs carries `pert_id`, `condition`, `donor` (normalized by core.data).
+    Precondition (enforced by core.data.prepare_core): `adata.obs` carries the canonical
+    `pert_id`/`condition`/`donor` columns and `adata.var_names` are Ensembl ids. We take the
+    in-memory AnnData OBJECT — not a path — so we never re-read the raw file and discard the
+    normalization (that was the bug). Never holds more than `chunk` cells dense in memory.
     """
-    import anndata as ad
-    adata = ad.read_h5ad(h5ad_path, backed="r")
+    missing = [c for c in ("pert_id", "condition", "donor") if c not in adata.obs.columns]
+    if missing:
+        raise ValueError(
+            f"iter_anndata_chunks expects a normalized AnnData (missing obs {missing}); "
+            "call core.data.normalize_obs first."
+        )
     gene_pos = [adata.var_names.get_loc(g) for g in hvg_genes]
     n = adata.n_obs
     for start in range(0, n, chunk):
@@ -141,10 +147,15 @@ def iter_anndata_chunks(h5ad_path, hvg_genes: Sequence[str], chunk: int = 50_000
         yield obs, X
 
 
-def build_from_anndata(h5ad_path, hvg_genes: Sequence[str], man: Optional[C.SplitManifest] = None,
+def build_from_anndata(adata, hvg_genes: Sequence[str], man: Optional[C.SplitManifest] = None,
                        chunk: int = 50_000) -> None:
-    """Production entrypoint: stream a backed .h5ad into the pseudobulk parquets."""
+    """Production entrypoint: stream a NORMALIZED backed AnnData into the pseudobulk parquets.
+
+    `adata` is the in-memory object already run through core.data.normalize_obs +
+    ensure_ensembl_var (see core.data.prepare_core), so the streaming reads the normalized
+    obs/var rather than re-opening the raw file.
+    """
     acc = PseudobulkAccumulator(hvg_genes)
-    for obs, X in iter_anndata_chunks(h5ad_path, hvg_genes, chunk=chunk):
+    for obs, X in iter_anndata_chunks(adata, hvg_genes, chunk=chunk):
         acc.add(obs, X)
     build_and_write(acc.result(), man)

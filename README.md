@@ -27,9 +27,12 @@ Marson/Pritchard genome-scale CRISPRi Perturb-seq in primary human CD4+ T cells
 (~22M cells, every expressed gene silenced one at a time, 4 donors, 3 activation
 states: Rest / Stim8hr / Stim48hr).
 
-- **GEO:** GSE278572 · CZI Virtual Cells mirror
-- **Split SHA256:** _(recorded here once `split_manifest.json` is frozen against the
-  downloaded `.h5ad` — every module verifies this hash at startup)_
+- **GEO:** GSE278572 · CZI Virtual Cells mirror · bioRxiv `10.64898/2025.12.23.696273`
+- **CP1 data source:** `GWCD4i.pseudobulk_merged.h5ad` (44.6 GB pre-computed pseudobulk;
+  278,684 guide×donor×condition profiles × 18,129 genes). CP1 runs on pseudobulk deltas;
+  the ~1.7 TB of single cells are the JEPA lane's input.
+- **Split SHA256 (frozen):** `fd2b8c21d357f8699ec34e2d5ebc1639612c27a0147a9ca94d4983822d93247e`
+  — binds the split to that exact file; every module verifies it at startup.
 
 ## The claims (pre-registered — see [`hypotheses.md`](hypotheses.md))
 
@@ -48,6 +51,39 @@ states: Rest / Stim8hr / Stim48hr).
 | Random | on  | Causal-only — C2 treatment (`causal`) |
 | JEPA   | off | JEPA-only (`jepa_only`) |
 | JEPA   | on  | **JEPA + causal — main model** (`jepa_causal`) |
+
+## CP1 results (real data, L4)
+
+Trained on the frozen split (SHA above): 2,269 / 318 evaluable HVG-panel perturbations on the
+condition / gene hold-outs. Headline metrics (`results/benchmark_table.csv`; full 8-metric
+appendix in `results/benchmark_table_full.csv`):
+
+| split | model | Pearson-δ (top-50) ↑ | PerturBench rank ↓ | DES ↑ |
+|---|---|---|---|---|
+| **condition** | **causal** | **0.344** | 0.457 | 0.587 |
+| condition | non-causal | 0.226 | 0.483 | 0.579 |
+| condition | ridge | 0.384 | **0.365** | 0.651 |
+| condition | fcn | 0.086 | 0.500 | 0.535 |
+| **gene** | **causal** | **0.368** | 0.440 | 0.599 |
+| gene | non-causal | 0.206 | 0.484 | 0.590 |
+| gene | ridge | 0.019 | 0.501 | 0.506 |
+| gene | fcn | 0.107 | 0.500 | 0.554 |
+
+**C2 — the do-operator works (headline, pre-registered).** Same architecture, mask on vs off:
+the causal mask beats its non-causal twin by **+52%** on the condition hold-out (0.344 vs 0.226)
+and **+79%** on the gene hold-out (0.368 vs 0.206). The advantage is consistent across
+Pearson-δ, E-distance (2.46 vs 6.46 condition; lower better), and AUPRC. The corrected
+do-mask — masking only the perturbed gene's query row so the intervention propagates
+downstream — is doing real work.
+
+**Zero-shot to unseen genes:** the causal model generalizes to genes it never saw silenced
+(**0.368**) where the linear baseline fully collapses (Ridge **0.019**).
+
+**Honest caveats.** On the pure condition shift, a simple gene→δ linear map (Ridge, 0.384) is
+still competitive with / slightly ahead of the causal transformer (0.344), and only Ridge on the
+condition hold-out clears the mode-collapse bar (rank < 0.4) — the transformers sit in the
+borderline 0.44–0.48 band (causal always sharper than non-causal). TabPFN is license-gated on a
+headless box (see RUNBOOK); the JEPA cells of the 2×2 (C3) are CP2.
 
 ## The two corrections this build refuses to revert (`UNIFIED_BUILD_PLAN.md` §1)
 
