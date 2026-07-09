@@ -170,5 +170,13 @@ Reproduce: `python run_c4.py && python eval.py && python sensitivity.py` (spike 
 A third probe — the **C-NL gate** (`python run_cnl_gate.py`) — is the **positive** of the line: on ground
 truth the baseline **third moment predicts the second-order response covariance provably misses** (ΔR²
 ≈ +0.6–0.75, CI excluding 0; survives to 1,000 cells with NB emission on). The term is small (~3–4%) but
-structured; the open go/no-go is sizing the analogous residual on real CD4 (within-donor, stratified by
+structured; the go/no-go is sizing the analogous residual on real CD4 (within-donor, stratified by
 effect size — the large-effect bin is decision-relevant). Readout: [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).
+
+That real-data go/no-go is **done, and the line is closed as a negative**: across 4 donors × 3 states
+(16,188 perturbations, CIPHER-exact raw counts) the baseline third moment is **orthogonal** to the
+first-order residual — ΔR² +0.0000 in every stratum (jackknife 95% CI [−0.0000, +0.0000]), the feature
+well-formed throughout, so orthogonality rather than weakness. Room exists (first-order residual ~91%,
+worse under stimulation) but the third moment fills none of it → **no-go on a third-moment closed-form
+for real CD4**. Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
+The three-stage arc (spikes FAIL → simulator gate LIVE → real-data NEGATIVE) is the closed mechanism line.

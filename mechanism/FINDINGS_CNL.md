@@ -122,3 +122,12 @@ python run_cnl_gate.py           # full gate (8 seeds) -> results/delta_r2_vs_la
 python run_cnl_gate.py quick     # fast directional read (reduced; not the committed artifact)
 ```
 CPU-only.
+
+## Update — real-data outcome (does NOT transfer)
+
+The go/no-go this gate deferred to the project lead has been run on the real CD4⁺ CRISPRi data
+(4 donors × 3 conditions, 16,188 perturbations, CIPHER-exact raw-count `Σ`/`ΔX`). **Result: NEGATIVE
+in all 12 strata** — the diagonal third-moment feature is orthogonal to the CIPHER residual
+(mean ΔR² +0.0000, jackknife 95% CI [−0.0000, +0.0000]), the opposite of the LIVE result here. The
+simulator's signal does not survive real single-cell estimation error. Full writeup:
+[FINDINGS_CNL_REALDATA.md](FINDINGS_CNL_REALDATA.md). No-go on a third-moment closed-form for real data.

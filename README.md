@@ -177,9 +177,17 @@ A **third probe (the C-NL gate) is the positive** of the line: covariance/Lyapun
 *second-moment* property, so the one signal it provably cannot carry lives in the third moment. On
 ground truth the baseline **third moment predicts the second-order perturbation response covariance
 misses** — ΔR² ≈ +0.6–0.75 (CI excluding 0), surviving to 1,000 control cells with NB emission on. The
-term is small (~3–4% of the response) but strongly structured; sizing it on real CD4 data is the open
+term is small (~3–4% of the response) but strongly structured; sizing it on real CD4 data is the
 go/no-go. Provenance-guarded (the third-moment link is an inference from response theory, not a CIPHER
 claim). See [`mechanism/README.md`](mechanism/README.md) and [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).
+
+That go/no-go has now been run, and it **closes the line as a negative**: on real CD4⁺ CRISPRi data
+(4 donors × 3 states, 16,188 perturbations, CIPHER-exact raw counts) the baseline third moment is
+**orthogonal** to the first-order residual — ΔR² pinned at zero in all 12 strata (mean +0.0000, jackknife
+95% CI [−0.0000, +0.0000]), feature well-formed everywhere. Room exists (the linear model leaves ~91% of
+variance unexplained, and its fit degrades further under stimulation) but the third moment fills none of
+it. The simulator signal does not survive real single-cell estimation error → **no-go on a third-moment
+closed-form.** Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
 
 ## License
 
