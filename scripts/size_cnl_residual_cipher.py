@@ -177,7 +177,16 @@ def main(argv=None):
 
     C.ensure_dirs(); tmp = Path(args.tmp_dir); out = Path(args.out)
     strata = [(d, c) for d in args.donors for c in args.conditions]
+    done = set()
+    if out.exists():
+        try:
+            dd = pd.read_csv(out, usecols=["donor", "condition"]).drop_duplicates()
+            done = set(zip(dd.donor.astype(str), dd.condition.astype(str)))
+        except Exception:
+            pass
     for d, c in strata:
+        if (_canon_donor(d), _canon_condition(c)) in done:
+            print(f"[{d} {c}] already in {out.name} — skip (resume)", flush=True); continue
         key = f"{PREFIX}/{d}_{c}.assigned_guide.h5ad"; sz = _head_size(key)
         if sz is None:
             print(f"[{d} {c}] MISSING", flush=True); continue
