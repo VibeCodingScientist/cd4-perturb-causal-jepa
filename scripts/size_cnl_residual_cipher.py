@@ -96,6 +96,10 @@ def cipher_stratum(path, gene_mode, min_mean, min_cells=100):
 
     tperts = pd.unique(pid[is_targ]); pidx = {p: i for i, p in enumerate(tperts)}
     PS = np.zeros((len(tperts), G)); PN = np.zeros(len(tperts))
+    # perturbed genes that are also readout genes -> compute the third-moment slice T[:,k,k] for each
+    pgenes = [p for p in tperts if p in pos]
+    pcols = np.array([pos[p] for p in pgenes], dtype=int)
+    M = np.zeros((G, len(pcols)))                              # raw 3rd moment sum_c x_i x_k^2 (control)
     s1 = np.zeros(G); s2 = np.zeros((G, G)); nctrl = 0
     for i0 in range(0, N, CHUNK):
         sl = slice(i0, min(i0 + CHUNK, N))
@@ -104,14 +108,22 @@ def cipher_stratum(path, gene_mode, min_mean, min_cells=100):
         ct = is_ctrl[sl]; tg = is_targ[sl]
         if ct.any():
             Xk = Xc[ct]; s1 += Xk.sum(0); s2 += Xk.T @ Xk; nctrl += Xk.shape[0]
+            if len(pcols):
+                M += Xk.T @ (Xk[:, pcols] ** 2)
         if tg.any():
             ii = np.array([pidx[p] for p in pid[sl][tg]]); np.add.at(PS, ii, Xc[tg]); np.add.at(PN, ii, 1.0)
     if nctrl < 2:
         return None
     ctrl_mean = s1 / nctrl
     Sigma = (s2 - nctrl * np.outer(ctrl_mean, ctrl_mean)) / (nctrl - 1); Sigma = 0.5 * (Sigma + Sigma.T)
+    # central third moment slices T_ikk = E[dx_i dx_k^2] from raw moments (control cells)
+    Tslices = None
+    if len(pcols):
+        mu = ctrl_mean; E2 = s2 / nctrl; EM = M / nctrl; d2 = np.diagonal(E2)[pcols]
+        Tslices = EM - 2 * mu[pcols][None, :] * E2[:, pcols] - np.outer(mu, d2) + 2 * np.outer(mu, mu[pcols] ** 2)
     deltas = {p: (PS[i] / PN[i] - ctrl_mean, int(PN[i])) for p, i in pidx.items() if PN[i] >= min_cells}
-    return dict(Sigma=Sigma, genes=genes, pos=pos, ctrl_mean=ctrl_mean, deltas=deltas, n_ctrl=nctrl)
+    return dict(Sigma=Sigma, genes=genes, pos=pos, ctrl_mean=ctrl_mean, deltas=deltas, n_ctrl=nctrl,
+                Tslices=Tslices, pgenes=pgenes)
 
 
 def score_stratum(res, donor, cond):
@@ -131,6 +143,65 @@ def score_stratum(res, donor, cond):
                          resid_frac_trans=(np.nan if rft is None else rft),
                          r2=float(1 - rf * rf)))
     return pd.DataFrame(rows)
+
+
+def cnl_test(res, n_perm=300, seed=0, trans_only=True):
+    """Real-data C-NL gate (confound-controlled). Tests whether the baseline third moment T[:,k,k]
+    predicts the first-order (CIPHER) residual r = ΔX - u_k* Σ[:,k] BEYOND a null of covariance + mean
+    features (the null absorbs the Poisson/mean-driven skew confound). Per-perturbation demeaning
+    (=per-pert intercept); incremental ΔR² via Frisch-Waugh; label-permutation null (shuffle which
+    perturbation's T-slice aligns to the residual) = the decisive specificity guard.
+    Feature folds u_k*^2 so the pooled slope beta is comparable to the theory value 1/2."""
+    Sigma, pos, mu = res["Sigma"], res["pos"], res["ctrl_mean"]
+    deltas, Tsl, pgenes = res["deltas"], res["Tslices"], res["pgenes"]
+    if Tsl is None or not deltas:
+        return None
+    tcol = {g: j for j, g in enumerate(pgenes)}
+    Sig2 = Sigma @ Sigma
+    dS = np.diag(Sigma)
+    R, BB, fblocks, betas = [], [], [], []
+    for p, (dX, npert) in deltas.items():
+        if p not in pos or p not in tcol:
+            continue
+        k = pos[p]; colS = Sigma[:, k]; den = float(colS @ colS)
+        if den <= 0:
+            continue
+        uk = float(colS @ dX) / den
+        r = dX - uk * colS
+        g = (uk * uk) * Tsl[:, tcol[p]]
+        base = np.column_stack([colS, colS ** 2, Sig2[:, k], mu, mu * mu[k], mu * mu[k] ** 2])
+        keep = np.ones(len(r), bool)
+        if trans_only:
+            keep[k] = False                                    # drop autologous (mean-dominated) i=k
+        r, g, base = r[keep], g[keep], base[keep]
+        r = r - r.mean(); g = g - g.mean(); base = base - base.mean(0)   # per-pert demean
+        R.append(r); fblocks.append(g); BB.append(base)
+    if len(fblocks) < 5:
+        return None
+    R = np.concatenate(R); F = np.concatenate(fblocks); B = np.vstack(BB)
+    ss_tot = float(R @ R)
+    BtB_inv = np.linalg.pinv(B.T @ B)
+
+    def resid(v):
+        return v - B @ (BtB_inv @ (B.T @ v))
+
+    rp = resid(R)
+
+    def dR2(f):
+        fp = resid(f); sf = float(fp @ fp)
+        if sf <= 0 or ss_tot <= 0:
+            return 0.0, 0.0
+        return float((fp @ rp) ** 2 / (sf * ss_tot)), float((fp @ rp) / sf)
+
+    dr2_obs, beta_obs = dR2(F)
+    prng = np.random.default_rng(seed); perm = []
+    for _ in range(n_perm):
+        order = prng.permutation(len(fblocks))
+        perm.append(dR2(np.concatenate([fblocks[o] for o in order]))[0])
+    perm = np.array(perm)
+    return dict(dR2=dr2_obs, beta=beta_obs, perm_p=float((np.sum(perm >= dr2_obs) + 1) / (n_perm + 1)),
+                perm_med=float(np.median(perm)), perm_hi=float(np.percentile(perm, 97.5)),
+                nperts=len(fblocks), n=len(R))
 
 
 def _report(R, tag=""):
@@ -170,17 +241,21 @@ def main(argv=None):
     ap.add_argument("--min-headroom-gb", type=float, default=15.0)
     ap.add_argument("--keep-raw", action="store_true")
     ap.add_argument("--out", default=str(C.RESULTS_DIR / "cnl_realdata_residual_cipher.csv"))
+    ap.add_argument("--cnl", action="store_true", help="also run the C-NL third-moment gate per stratum")
+    ap.add_argument("--cnl-out", default=str(C.RESULTS_DIR / "cnl_gate_realdata.csv"))
+    ap.add_argument("--n-perm", type=int, default=300)
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args(argv)
     if args.selftest:
         raise SystemExit(0 if selftest() else 1)
 
-    C.ensure_dirs(); tmp = Path(args.tmp_dir); out = Path(args.out)
+    C.ensure_dirs(); tmp = Path(args.tmp_dir); out = Path(args.out); cnl_out = Path(args.cnl_out)
     strata = [(d, c) for d in args.donors for c in args.conditions]
+    resume_file = cnl_out if args.cnl else out
     done = set()
-    if out.exists():
+    if resume_file.exists():
         try:
-            dd = pd.read_csv(out, usecols=["donor", "condition"]).drop_duplicates()
+            dd = pd.read_csv(resume_file, usecols=["donor", "condition"]).drop_duplicates()
             done = set(zip(dd.donor.astype(str), dd.condition.astype(str)))
         except Exception:
             pass
@@ -209,10 +284,35 @@ def main(argv=None):
             Rk.to_csv(out, mode="a", header=not out.exists(), index=False)
             print(f"[{d} {c}] scored {len(Rk)} perts (G={len(res['genes'])}, n_ctrl={res['n_ctrl']:,}) "
                   f"resid_med={Rk.resid_frac.median():.3f} R2_med={Rk.r2.median():.3f} ({time.time()-t0:.0f}s)", flush=True)
+        if args.cnl:
+            for tflag, tag in [(True, "trans"), (False, "full")]:
+                ct = cnl_test(res, n_perm=args.n_perm, trans_only=tflag)
+                if ct:
+                    pd.DataFrame([dict(donor=_canon_donor(d), condition=_canon_condition(c), scope=tag, **ct)]).to_csv(
+                        cnl_out, mode="a", header=not cnl_out.exists(), index=False)
+                    print(f"[{d} {c}] C-NL {tag}: dR2={ct['dR2']:+.4f} beta={ct['beta']:.3f} "
+                          f"perm_p={ct['perm_p']:.3f} permhi={ct['perm_hi']:.4f} nperts={ct['nperts']}", flush=True)
     if out.exists():
         R = pd.read_csv(out).drop_duplicates(["donor", "condition", "pert"]); _report(R, f"({args.genes})")
-        (C.RESULTS_DIR / "CNL_CIPHER_DONE").touch()
-    else:
+    if args.cnl and cnl_out.exists():
+        CN = pd.read_csv(cnl_out).drop_duplicates(["donor", "condition", "scope"])
+        print("\n===== C-NL third-moment gate (real data) — does T[:,k,k] beat covariance+mean on the residual =====")
+        for tag in ["trans", "full"]:
+            sub = CN[CN.scope == tag]
+            if sub.empty:
+                continue
+            v = sub.dR2.to_numpy(); m = float(v.mean())
+            if len(v) > 1:                                   # leave-one-stratum-out jackknife SE
+                jack = np.array([np.delete(v, i).mean() for i in range(len(v))])
+                se = float(np.sqrt((len(v) - 1) / len(v) * np.sum((jack - jack.mean()) ** 2)))
+            else:
+                se = 0.0
+            print(f"  {tag:6s}: strata={len(sub)}  mean ΔR²={m:+.4f}  jackknife 95%CI=[{m-1.96*se:+.4f},{m+1.96*se:+.4f}]"
+                  f"  median β={sub.beta.median():+.3f} (theory 0.5)  perm_p median={sub.perm_p.median():.3f}"
+                  f"  (perm null ΔR² median={sub.perm_med.median():.4f})")
+        CN.to_csv(cnl_out, index=False)
+        (C.RESULTS_DIR / "CNL_GATE_DONE").touch()
+    if not out.exists() and not (args.cnl and cnl_out.exists()):
         print("no rows produced")
 
 
