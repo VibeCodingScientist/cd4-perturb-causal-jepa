@@ -116,15 +116,19 @@ Run on an in-region AWS box (public S3 bucket `genome-scale-tcell-perturb-seq/ma
 `aws s3 --no-sign-request`). Full 12-strata sweep ≈ 7.4 h wall (download-bound). Checkpoints are retained
 off-repo on the compute box, so any variant probe below is instant.
 
-## 5. Scope, caveats, and the only things that could still move it
+## 5. Scope, and the variant probes (considered and declined)
 
 The negative is specifically for the **diagonal** third-moment slice `T_ikk` at ~76k–88k control cells per
-stratum. Variants that remain untested (checkpoint-cheap, no re-download) if the lead wants to close them:
+stratum. Three further degrees of freedom exist and were **considered and declined**, not run:
 
 - **full off-diagonal `T[u,u]`** rather than the single-gene diagonal slice,
 - **denoised / low-rank `T`** to suppress third-moment estimation noise,
 - **per-condition rather than pooled** modelling.
 
-None of these is expected to overturn the headline — the diagonal feature is not merely weak, it is
-*orthogonal* (`raw_corr ≈ 0`) in all 12 strata — but they are the honest remaining degrees of freedom. The
-build of a third-moment closed-form for real CD4 data is **not** recommended on this evidence.
+They are declined on the **orthogonality** evidence, not on cost: the diagonal feature is not merely weak,
+it is *orthogonal* to the residual (`raw_corr ≈ 0`, `perm_p` non-significant) in all 12 strata. A different
+contraction of the same third-moment object cannot concentrate signal that is not there — there is nothing
+to rescue. Running checkpoint-cheap variants against an orthogonal result would be effort spent because it
+is cheap, not because it is informative. The build of a third-moment closed-form for real CD4 data is **not
+recommended**, and **this line is closed** — spikes #1/#2 (FAIL) → simulator gate (LIVE) → real data
+(NEGATIVE).
