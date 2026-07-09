@@ -59,6 +59,32 @@ random, modestly.
   run-to-run noise band) — the pre-registered Cell-JEPA corroboration.
 - **S1 (VOI) works** — disagreement-guided selection is more sample-efficient than random.
 
+## Challenger (rejected): can the transformers be made to discriminate? — v2
+
+We probed the one soft spot (all four transformer cells fail the mode-collapse detector) with a
+gated **perturbation-discrimination InfoNCE** term added to the loss (batch-centered cosine,
+in-batch negatives, same-gene masked) — same trainer, split, epochs=40, JEPA checkpoint; only the
+objective changes. `core.models.discrim_v2`, weight tuned on a **disjoint 15% dev split**.
+
+**Diagnostic first (residual PerturBench rank):** the collapse is *real*, not a metric artifact —
+removing the shared activation-state profile leaves the transformer rank at ~0.46 (barely moved),
+while ridge stays at ~0.36. So a fix (not just a reframe) was warranted.
+
+**Result (`results/benchmark_table_v2.csv`, w=0.3):** the term improved discrimination for the
+mask-**on** cells (causal gene rank 0.440→**0.364**, *clears*; causal condition 0.457→0.407) and
+even **grew the C2 do-operator gap** (condition +0.118→+0.180, gene +0.162→+0.194, because the
+mask-off models collapse harder). BUT: (1) it did **not** clear the flag on the primary **condition**
+hold-out (causal 0.407, jepa_causal 0.427 still > 0.4); (2) it didn't help the mask-off cells; and
+(3) it **cratered absolute accuracy** (causal condition 0.344→0.248; mask-off cells to ~0.05).
+
+**Verdict (pre-committed §4 gate): REJECTED.** Promotion required causal *and* jepa_causal to clear
+rank < 0.4 on the reported hold-outs *and* the C2 gap to hold ≥ +0.10. The C2 gap held, but
+discrimination did not clear on the condition hold-out — and the accuracy cost is steep. **CP2
+stands as the submission of record.** The finding is itself real and reportable: *there is a genuine
+accuracy↔discrimination trade-off — forcing discrimination via the loss buys only a partial rank
+improvement at a large Pearson-δ cost, so the honest CP2 framing (accurate, do-operator effect
+intact, flag surfaced) is retained.* v2 artifacts kept in `runs/*_v2.parquet` + `benchmark_table_v2.csv`.
+
 ## Figures
 `figures/figure1_benchmark.png` (benchmark table, collapse in red), `figure2_2x2.png` (the 2×2,
 C2/C3 read-out), `figure3_subsampling.png` (VOI vs random), `figure4_biology.png` (top VOI genes).
