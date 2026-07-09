@@ -175,3 +175,45 @@ Did not: build any model, download cells, touch CP2 / the budget / Dev 4's branc
 **Box line at hand-off.** GPU **idle** (0% util); no Phase-B job running or queued; the box is free.
 Committed artifacts on branch `phaseB` (unpushed, unmerged). Scratch on box at `~/cd4-phaseB/`.
 
+---
+
+## Step 0 — SNR pre-check for the single-cell CellCap seam → **NOT GREEN (confirmed floor)**  [IN-PROJECT]
+
+The lead greenlit the ~130 GB single-cell run *conditional on* an SNR pre-check: is the ~0.033
+per-perturbation reproducibility a **pseudobulk-aggregation artifact single-cell resolution fixes**,
+or a **genuine effect-size/noise floor** it cannot? Computed from committed data only (no download).
+
+**Decisive fact:** single-cell modeling of a perturbation's *mean* effect does **not** add cells —
+pseudobulk is the sufficient statistic for the mean, so the same ~180 cells/pert set the floor either
+way. Single-cell helps only via within-state **concentration** (effect localized to a subpopulation)
+or higher moments.
+
+| metric | value | reading |
+|---|---|---|
+| cross-donor reproducibility, full 3000 genes | 0.029 | matches Phase B's ~0.033 |
+| cross-donor reproducibility, **relevant top-50 effect genes** | **0.033** | focusing on the genes that matter does **not** lift it |
+| perturbations with detectable effect (SNR>3) | **17%** | most per-pert effects are weak at 180 cells |
+| within-donor reliability (noise model) | 0.48 | but ≫ cross-donor 0.03 → the non-noise structure is **donor-specific**, not reproducible biology single-cell repairs |
+| cells needed to reach usable r=0.30 | **~12×** | not available (experimental cell count is fixed) |
+| concentration needed instead | **~8% of cells** | stringent; even a generous f=0.3 projects to only r≈0.10 |
+
+**The single number for the lead: per-perturbation cross-donor reproducibility on the relevant genes
+= 0.033 (unchanged from the full-vector floor); projected single-cell best-case ≈ 0.10, short of the
+0.30 usable floor.** → **NOT GREEN.** The per-perturbation frontier is a genuine effect-size/noise (and
+donor-variability) floor, **not** a pseudobulk artifact single-cell resolution fixes. **No download,
+no build; the 130 GB is not spent.** Box stays down.
+
+*Honest caveat (the one scenario single-cell might help):* the within-donor 0.48 vs cross-donor 0.03
+gap *could* be donor differences in cell-state composition (which cell-state-conditioning would
+disentangle) rather than pure batch. The pre-check can't separate these without cells — but the
+underlying effects are weak (17% detectable, median SNR 1.7), so even in that best case the expected
+recovery is low. Recommendation stands: **do not spend the download on an ~8%-concentration bet over
+weak effects.** If the lead wants to chase the composition hypothesis specifically, that is the only
+justification — a deliberate low-probability bet, not the default.
+
+Outputs: `results/phaseB_snr_precheck.csv`, `phaseB_snr_precheck_summary.csv`.
+
+**Result type:** a clean, reported **confirmed floor** ("the per-perturbation frontier is noise-limited
+even at single-cell resolution"), exactly the pre-registered NOT-GREEN outcome — no GPU-hours, no
+egress spent to reach it.
+
