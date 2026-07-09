@@ -52,4 +52,38 @@ Outputs: `results/phaseB_localization.csv`, `figures/phaseB_localization.png`.
 **Route lean after B1: RED.** B2 tests whether an existing state-aware tool nonetheless recovers the
 residual (which would overturn RED); B3 executes the confirmed route.
 
-<!-- B2 and B3 sections appended below as they complete -->
+---
+
+## B2 — recovery baseline: does an existing state-aware tool close the gap?  [IN-PROJECT]
+
+**(A) The do-operator-adjusted remainder (the true denominator).** From the committed Phase-A budget
+(gene split): bucket C ≈ 0.76 of the reliability ceiling; the committed do-operator (causal) recovers
+**54% of C**, leaving a **do-operator-adjusted remainder ≈ 46% of C (0.35 of total)**. *Any* build must
+beat that remainder, not all of C. (On the *condition* split the do-operator is beaten by linear Ridge,
+so bucket C there is a gene-split phenomenon — the relevant axis.)
+
+**(B) Is the remainder recoverable structure, or noise/shared? (the RED-vs-GREEN arbiter.)**
+Reconstructed per-perturbation residual vectors from the committed checkpoints and measured cross-donor
+reproducibility:
+
+| level | cross-donor reproducibility |
+|---|---|
+| aggregate gene-residual profile (B1, averaged over ~1300 perts) | **0.94** (within-condition) |
+| **individual perturbation** residual vector | **0.034** |
+| individual perturbation residual, **shared program removed** | **0.033** |
+
+**Reading.** The reproducible residual is a **shared, condition-specific gene program** (systematic
+across all perturbations — hence 0.94 in the average) that peaks at the Stim8hr transition. The
+**perturbation-specific** residual is **near noise at pseudobulk** (0.03; unchanged when the shared
+program is removed → ~97% of a single perturbation's residual is sampling noise at ~180 cells/pert).
+So no *pseudobulk* tool — CIPHER, Ridge, or the do-operator — can recover per-perturbation residual
+structure that isn't resolvable at this SNR. **The gap is real (46% of C) but its per-perturbation,
+recoverable part is obscured by sampling noise at the pseudobulk level.**
+
+**B2 verdict → RED confirmed, and the data-need sharpened.** The residual is (i) a shared *transient*
+activation program (condition-level, already captured by any per-condition model — not the prediction
+frontier) plus (ii) a perturbation-specific part that is noise-limited at pseudobulk. Recovering (ii)
+needs **single-cell resolution + more cells per perturbation** (to beat the noise floor and test
+within-condition cell-state dependence, the CellCap seam) — i.e. a raw-cell download, **not** a
+cleverer pseudobulk model. Output: `results/phaseB_recovery.csv`.
+
