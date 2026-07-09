@@ -52,6 +52,11 @@ class CausalConfig:
     seed: int = C.SPLIT_SEED
     bf16: bool = True                # autocast on CUDA
     grad_checkpoint: bool = True
+    # CP2-v2 (Developer 2, challenger): perturbation-discrimination InfoNCE term.
+    # DEFAULT 0.0 -> term disabled -> training is byte-identical to CP2. Only the v2
+    # runner (core.models.discrim_v2) sets discrim_weight > 0.
+    discrim_weight: float = 0.0      # weight of the in-batch discrimination loss
+    discrim_tau: float = 0.1         # InfoNCE temperature
 
 
 def _build_model(cfg: CausalConfig, use_causal_mask: bool):
@@ -217,6 +222,21 @@ def _train(model, s: _Samples, esm2_t, ctx_t, cfg: CausalConfig, device):
                              if de_mask.any() else dhat.new_zeros(()))
                 bce = nn.functional.binary_cross_entropy_with_logits(de_logit, de)
                 loss = mse_full + 0.5 * mse_delta + 0.1 * bce
+                if cfg.discrim_weight > 0 and len(pidx) > 2:
+                    # Perturbation-discrimination InfoNCE (CP2-v2). Center by the batch
+                    # mean to target the perturbation-SPECIFIC residual (the exact axis
+                    # the mode-collapse diagnostic showed was failing), then cosine
+                    # in-batch contrastive: each predicted residual must match its own
+                    # true residual and not another perturbation's. Same-gene rows are
+                    # masked out of the negatives so they are never treated as wrong.
+                    zc = nn.functional.normalize(dhat - dhat.mean(0, keepdim=True), dim=1)
+                    tc = nn.functional.normalize(tgt - tgt.mean(0, keepdim=True), dim=1)
+                    sim = (zc @ tc.T) / cfg.discrim_tau
+                    same = pidx[:, None] == pidx[None, :]
+                    same.fill_diagonal_(False)
+                    sim = sim.masked_fill(same, -1e4)
+                    labels = torch.arange(len(pidx), device=device)
+                    loss = loss + cfg.discrim_weight * nn.functional.cross_entropy(sim, labels)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.grad_clip)
             opt.step(); sched.step(); step += 1
