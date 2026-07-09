@@ -180,26 +180,32 @@ def cnl_test(res, n_perm=300, seed=0, trans_only=True):
         return None
     R = np.concatenate(R); F = np.concatenate(fblocks); B = np.vstack(BB)
     ss_tot = float(R @ R)
-    BtB_inv = np.linalg.pinv(B.T @ B)
 
-    def resid(v):
-        return v - B @ (BtB_inv @ (B.T @ v))
+    def make_resid(Bm):
+        inv = np.linalg.pinv(Bm.T @ Bm)
+        return lambda v: v - Bm @ (inv @ (Bm.T @ v))
 
-    rp = resid(R)
+    resid = make_resid(B)                      # full null: covariance + mean features
+    resid_cov = make_resid(B[:, :3])           # covariance-only null (colS, colS^2, Sigma^2)
+    rp = resid(R); rp_cov = resid_cov(R)
 
-    def dR2(f):
-        fp = resid(f); sf = float(fp @ fp)
+    def dR2(f, rp_, res_):
+        fp = res_(f); sf = float(fp @ fp)
         if sf <= 0 or ss_tot <= 0:
             return 0.0, 0.0
-        return float((fp @ rp) ** 2 / (sf * ss_tot)), float((fp @ rp) / sf)
+        return float((fp @ rp_) ** 2 / (sf * ss_tot)), float((fp @ rp_) / sf)
 
-    dr2_obs, beta_obs = dR2(F)
+    dr2_obs, beta_obs = dR2(F, rp, resid)
+    dr2_cov, _ = dR2(F, rp_cov, resid_cov)     # does T beat covariance ALONE (before mean control)?
+    raw_corr = float(np.corrcoef(F, R)[0, 1]) if F.std() > 0 and R.std() > 0 else 0.0
     prng = np.random.default_rng(seed); perm = []
     for _ in range(n_perm):
         order = prng.permutation(len(fblocks))
-        perm.append(dR2(np.concatenate([fblocks[o] for o in order]))[0])
+        perm.append(dR2(np.concatenate([fblocks[o] for o in order]), rp, resid)[0])
     perm = np.array(perm)
-    return dict(dR2=dr2_obs, beta=beta_obs, perm_p=float((np.sum(perm >= dr2_obs) + 1) / (n_perm + 1)),
+    return dict(dR2=dr2_obs, dR2_covonly=dr2_cov, beta=beta_obs, raw_corr=raw_corr,
+                Fabs=float(np.median(np.abs(F))), Rabs=float(np.median(np.abs(R))),
+                perm_p=float((np.sum(perm >= dr2_obs) + 1) / (n_perm + 1)),
                 perm_med=float(np.median(perm)), perm_hi=float(np.percentile(perm, 97.5)),
                 nperts=len(fblocks), n=len(R))
 
@@ -285,13 +291,21 @@ def main(argv=None):
             print(f"[{d} {c}] scored {len(Rk)} perts (G={len(res['genes'])}, n_ctrl={res['n_ctrl']:,}) "
                   f"resid_med={Rk.resid_frac.median():.3f} R2_med={Rk.r2.median():.3f} ({time.time()-t0:.0f}s)", flush=True)
         if args.cnl:
+            perts = list(res["deltas"])                       # checkpoint for instant re-analysis
+            ck = C.RESULTS_DIR / f"cnl_ckpt_{_canon_donor(d)}_{_canon_condition(c)}.npz"
+            np.savez_compressed(
+                ck, Sigma=res["Sigma"], mu=res["ctrl_mean"],
+                Tslices=res["Tslices"] if res["Tslices"] is not None else np.zeros((0, 0)),
+                pgenes=np.array(res["pgenes"]), genes=np.array(res["genes"]), perts=np.array(perts),
+                dX=np.vstack([res["deltas"][p][0] for p in perts]) if perts else np.zeros((0, len(res["genes"]))))
             for tflag, tag in [(True, "trans"), (False, "full")]:
                 ct = cnl_test(res, n_perm=args.n_perm, trans_only=tflag)
                 if ct:
                     pd.DataFrame([dict(donor=_canon_donor(d), condition=_canon_condition(c), scope=tag, **ct)]).to_csv(
                         cnl_out, mode="a", header=not cnl_out.exists(), index=False)
-                    print(f"[{d} {c}] C-NL {tag}: dR2={ct['dR2']:+.4f} beta={ct['beta']:.3f} "
-                          f"perm_p={ct['perm_p']:.3f} permhi={ct['perm_hi']:.4f} nperts={ct['nperts']}", flush=True)
+                    print(f"[{d} {c}] C-NL {tag}: dR2={ct['dR2']:+.4f} (cov-only {ct['dR2_covonly']:+.4f}) "
+                          f"beta={ct['beta']:+.3f} raw_corr={ct['raw_corr']:+.3f} |F|={ct['Fabs']:.2e} |r|={ct['Rabs']:.2e} "
+                          f"perm_p={ct['perm_p']:.3f} nperts={ct['nperts']}", flush=True)
     if out.exists():
         R = pd.read_csv(out).drop_duplicates(["donor", "condition", "pert"]); _report(R, f"({args.genes})")
     if args.cnl and cnl_out.exists():
