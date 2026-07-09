@@ -47,6 +47,15 @@ equilibrium fluctuation-response holds at Rest (R²≈0.34–0.62) and breaks du
 4 donors within a state (biological, not batch), but the *program differs by state* — consistent
 with a state-specific transient, not a single static program.
 
+**What the residual gene program IS  [VERIFIED — pseudobulk `gene_name` column].** The top residual
+genes (what CIPHER's equilibrium Σu misses most) are **IFNG, IL2, IL3, IL13, CSF2 (GM-CSF),
+CCL1/CCL3/CCL4, CXCL8, LTB, IL2RA**, plus TMSB4X/PFN1/S100A4/TRBC1. This is unambiguously the
+**T-cell activation / effector-cytokine program** — the switch-like induction that turns on during
+the Rest→Stim transition, peaks acutely at 8hr, and cannot be represented by a linear fluctuation-
+response built on *resting* covariance. It is largely **shared** (perturbation-independent: cells
+activate regardless of which gene is knocked down), which is exactly why B2 finds the *per-pert*
+residual noise-limited while the *aggregate program* is 0.94-reproducible.
+
 Outputs: `results/phaseB_localization.csv`, `figures/phaseB_localization.png`.
 
 **Route lean after B1: RED.** B2 tests whether an existing state-aware tool nonetheless recovers the
@@ -86,4 +95,83 @@ frontier) plus (ii) a perturbation-specific part that is noise-limited at pseudo
 needs **single-cell resolution + more cells per perturbation** (to beat the noise floor and test
 within-condition cell-state dependence, the CellCap seam) — i.e. a raw-cell download, **not** a
 cleverer pseudobulk model. Output: `results/phaseB_recovery.csv`.
+
+---
+
+## B3 — routed build: route = **RED** (measure-and-stop)  [IN-PROJECT]
+
+**Route decision.** Q3 fires (transition-peaked, 4/4 donors, effect/confound-controlled), confirmed
+by B2 (the recoverable-at-pseudobulk part is a shared transient program; per-pert structure is noise).
+Per the pre-registered routing, **Q3-fires → RED**: do **not** build a trajectory / non-autonomous
+vector-field model. Three timepoints (Rest / Stim8hr / Stim48hr) cannot identify a driven vector
+field; a long GPU run there would produce a *confident artifact*, which is worse than nothing.
+**No build was started. GPU left idle** (per the brief: leave the box idle rather than manufacture
+work when the route is RED). CP2/budget untouched; nothing merged.
+
+**Robustness of the decisive fingerprint  [IN-PROJECT].** The transition-peak is clear in the
+canonical CIPHER raw-count residual (`_cipher`: Rest 0.813 < Stim8hr 0.943 > Stim48hr 0.931, peak
++0.071). The `_exact` and log1p (`residual.csv`) variants are **degenerate** — residual saturates at
+~0.995 (CIPHER explains ≈nothing; the log1p case is the normalization the sizer docstring flags as
+broken), so they carry no fingerprint. Caveat: the fingerprint is a property of the *meaningful*
+(raw-count, CIPHER-Methods) residual; my reconstruction matched it exactly (corr 1.000).
+
+**What it is → what data it needs.**
+- *What it is:* a **transient T-cell activation cytokine program** (IFNG, IL2, CSF2, IL3/IL13,
+  CCL/CXCL chemokines, IL2RA…) induced across the Rest→Stim transition, peaking at 8hr — a
+  far-from-equilibrium response outside the reach of an equilibrium fluctuation-response model.
+  Largely *shared* across perturbations; the *perturbation-specific* residual is noise-limited at
+  pseudobulk (cross-donor 0.03).
+- *What it needs (for perturbation prediction, the project goal):* **single-cell resolution + more
+  cells per perturbation** — to (a) lift the per-pert residual above the pseudobulk noise floor and
+  (b) test whether it depends on within-condition cell-state (the CellCap seam). This is a raw-cell
+  download, **flag-gated** (≈130 GB/stratum), **not** run unattended.
+- *What it does NOT need:* more timepoints for *prediction* — the transient program is already
+  condition-level-captured by per-condition models; denser timepoints would serve *mechanism*
+  (identifying the transition vector field), which remains hard and is the RED-forbidden build.
+
+**Pre-registered success bar (stated, not exercised).** Had a build run, it would "succeed" only by
+recovering ≥25% of the do-operator-adjusted bucket-C remainder (≈46% of C), out-of-sample, beating
+both Ridge and the do-operator. **No build ran → no claim.** This is a *reported route*, not a null
+model result.
+
+**Follow-on queue — honest assessment (no busywork).**
+- *Item 1 (routed build):* skipped — RED.
+- *Item 2 (do-operator-adjusted per-condition ablation):* the committed do-operator predictions are
+  aggregated by hold-out split (gene / condition), not resolvable by the 3 biological conditions, so a
+  clean per-condition do-operator ablation is **not computable from committed data** (needs per-
+  condition eval predictions that were not committed).
+- *Item 3 (second pseudobulk tool):* would not beat the pseudobulk noise floor (B2) → no information
+  gain; not run.
+- *Item 4 (GREEN sweep):* N/A (GREEN did not run).
+→ Per the brief, remaining queue items are exhausted/uninformative on committed data → **STOP, GPU
+idle.** The one high-value next step (cell download → CellCap test) is flag-gated and recommended to
+the lead below.
+
+---
+
+## State for the lead + recommended next step
+
+**Bottom line.** The bucket-C residual is a **transient T-cell activation cytokine program** — real,
+structured, reproducible (B1), and it PEAKS at the Rest→Stim8hr activation transition. But its
+*reproducible* part is a **shared, perturbation-independent** program (captured by any per-condition
+model); the **perturbation-specific** residual — the actual prediction frontier — is **noise-limited
+at the pseudobulk level** (cross-donor 0.03). The existing state-aware tool (do-operator) already
+leaves ~46% of gene bucket C. **Route = RED: no static/trajectory model built on the current
+pseudobulk data would honestly clear the bar; the GPU was left idle rather than fill the night with a
+doomed run.**
+
+**Recommended next step (FLAG-GATED — needs your authorization).** Download 1–2 Stim8hr strata of raw
+cells (~130 GB each, same-region public S3 `--no-sign-request`, delete-after — the established C-NL
+pattern) to run the **decisive test the pseudobulk cannot**: (1) does per-perturbation residual
+structure appear above noise at single-cell SNR, and (2) does it depend on within-condition cell-state
+(the **CellCap** seam)? If yes → a GREEN CellCap build becomes justified (no extra timepoints). If no
+→ the residual is genuinely a shared transient program and the honest headline is "predictability
+ceiling on this axis; the per-pert frontier needs a different experiment (denser transition sampling)."
+I did **not** run this unattended (>5 GB download flag + RED routing).
+
+**What I did / did not do.** Did: B1 localization + B2 recovery, committed (`3ef19ca`, `6ea0e65`).
+Did not: build any model, download cells, touch CP2 / the budget / Dev 4's branches, or merge.
+
+**Box line at hand-off.** GPU **idle** (0% util); no Phase-B job running or queued; the box is free.
+Committed artifacts on branch `phaseB` (unpushed, unmerged). Scratch on box at `~/cd4-phaseB/`.
 
