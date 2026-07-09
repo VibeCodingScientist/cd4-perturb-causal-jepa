@@ -1,0 +1,9 @@
+metric,value
+xdonor_full_median,0.028833961965940628
+xdonor_top50_median,0.033470506567964055
+rel_full_median,0.4770955029403515
+rel_top_median,0.47802094398519435
+frac_detectable_snr3,0.17370892018779344
+frac_cyto_detectable_snr3,0.15684457622930567
+cells_multiple_to_usable,12.375878593754534
+green,0.0

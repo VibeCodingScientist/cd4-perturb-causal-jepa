@@ -1,0 +1,17 @@
+measure,split,metric,value
+denominator,gene,bucketC_of_total,0.762808
+denominator,gene,do_op_frac_of_C,0.5442522889114955
+denominator,gene,do_op_adjusted_remainder_of_total,0.34764799999999996
+denominator,gene,do_op_adjusted_remainder_frac_of_C,0.45574771108850454
+denominator,condition,bucketC_of_total,0.22344599999999998
+denominator,condition,do_op_frac_of_C,-0.3562874251497006
+denominator,condition,do_op_adjusted_remainder_of_total,0.22344599999999998
+denominator,condition,do_op_adjusted_remainder_frac_of_C,1.3562874251497006
+within_state_recovery,Rest,corr,0.035729142214175134
+within_state_recovery,Stim8hr,corr,0.026663929596887726
+within_state_recovery,Stim48hr,corr,0.04027168890425941
+specific_residual_reproducibility,Rest,corr,0.0342397469978238
+specific_residual_reproducibility,Stim8hr,corr,0.028653987207647783
+specific_residual_reproducibility,Stim48hr,corr,0.03592884939642194
+verdict,all,perpert_specific_rep_pseudobulk,0.03294086120063117
+verdict,all,perpert_full_rep_pseudobulk,0.034221586905107425

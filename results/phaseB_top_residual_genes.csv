@@ -1,0 +1,16 @@
+ensembl_id,symbol,residual_mass_frac,annotation
+ENSG00000205542,TMSB4X,0.014934,cytoskeletal (highly expressed)
+ENSG00000111537,IFNG,0.014861,effector cytokine (Th1)
+ENSG00000275302,CCL4,0.014706,chemokine
+ENSG00000227507,LTB,0.014268,lymphotoxin beta (TNF family)
+ENSG00000164399,IL3,0.012349,cytokine (chr5q31 cluster)
+ENSG00000277632,CCL3,0.008811,chemokine
+ENSG00000211751,TRBC1,0.007428,TCR beta constant
+ENSG00000108518,PFN1,0.006861,profilin (cytoskeletal)
+ENSG00000164400,CSF2,0.006831,GM-CSF cytokine (chr5q31 cluster)
+ENSG00000169429,CXCL8,0.006515,chemokine (IL8)
+ENSG00000134460,IL2RA,0.005795,IL2 receptor alpha (activation marker)
+ENSG00000196154,S100A4,0.005687,calcium-binding
+ENSG00000108702,CCL1,0.005680,chemokine
+ENSG00000109471,IL2,0.005543,T-cell growth cytokine
+ENSG00000169194,IL13,0.005374,Th2 cytokine
