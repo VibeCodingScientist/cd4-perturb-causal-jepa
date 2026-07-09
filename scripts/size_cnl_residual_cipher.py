@@ -39,7 +39,7 @@ import pandas as pd
 
 import core.contract as C
 from core.split import load_hvg
-from core.data import czi_obs_to_canonical, czi_donor_map, _canon_donor, _canon_condition
+from core.data import _canon_donor, _canon_condition
 import size_cnl_residual as S
 
 BUCKET = "genome-scale-tcell-perturb-seq"; PREFIX = "marson2025_data"; GB = 1 << 30; CHUNK = 20_000
@@ -62,56 +62,55 @@ def _densify(X):
     return X.toarray() if hasattr(X, "toarray") else np.asarray(X)
 
 
-def cipher_stratum(path, gene_mode, min_mean):
-    """One streamed pass over a stratum's assigned_guide h5ad (RAW counts):
-    returns (Sigma_c, genes_idx, ctrl_mean, {pert_id: (ΔX, n_pert)}, n_ctrl)."""
+def cipher_stratum(path, gene_mode, min_mean, min_cells=100):
+    """One streamed pass over a stratum's assigned_guide h5ad (RAW counts). Schema (verified on the
+    real files): obs has guide_type in {targeting, non-targeting, nan}, perturbed_gene_id (ENSG / NTC),
+    low_quality, guide_group; var_names are clean ENSG. donor/condition are implicit (per file).
+    Returns dict(Sigma, genes, pos, ctrl_mean, deltas={ensembl:(ΔX,n_pert)}, n_ctrl)."""
     import anndata as ad
     a = ad.read_h5ad(path, backed="r")
-    var = S._strip_version(list(a.var_names))
-    # gene set
+    var = S._strip_version(list(a.var_names)); N = a.n_obs
     if gene_mode == "hvg":
         hvg = S._strip_version(load_hvg()); col_of = {g: j for j, g in enumerate(var)}
         cols = np.array([col_of[g] for g in hvg if g in col_of]); genes = [g for g in hvg if g in col_of]
-    else:  # CIPHER: genes with mean raw count > min_mean (first pass to get means)
+    else:
         cols = None; genes = None
+
     obs = a.obs
-    canon = czi_obs_to_canonical(obs, czi_donor_map(obs))
-    pert = canon["pert_id"].astype(str).to_numpy()
-    is_ctrl = (pert == C.CONTROL_PERT_ID)
-    N = a.n_obs
+    gt = obs["guide_type"].astype(str).to_numpy()
+    pid = np.array(S._strip_version(obs["perturbed_gene_id"].astype(str).to_numpy()))
+    lowq = obs["low_quality"].astype(str).to_numpy() if "low_quality" in obs.columns else np.array(["False"] * N)
+    ggrp = obs["guide_group"].astype(str).to_numpy() if "guide_group" in obs.columns else np.array([""] * N)
+    good = lowq != "True"
+    is_ctrl = good & (gt == "non-targeting")
+    is_targ = good & (gt == "targeting") & (ggrp != "multi sgRNA")   # single-guide targeting cells
 
-    if gene_mode != "hvg":  # CIPHER filter: mean>min_mean over ALL cells
-        gsum = np.zeros(len(var));
+    if gene_mode != "hvg":  # CIPHER gene filter: mean raw count > min_mean over kept cells
+        gsum = np.zeros(len(var)); ncnt = 0
         for i0 in range(0, N, CHUNK):
-            gsum += _densify(a[i0:i0 + CHUNK].to_memory().X).sum(0)
-        keep = np.where(gsum / N > min_mean)[0]
-        cols = keep; genes = [var[j] for j in keep]
-    G = len(cols)
-    pos = {g: i for i, g in enumerate(genes)}
+            sl = slice(i0, min(i0 + CHUNK, N)); m = good[sl]
+            if m.any():
+                X = _densify(a[sl].to_memory().X)[m]; gsum += X.sum(0); ncnt += X.shape[0]
+        keep = np.where(gsum / max(ncnt, 1) > min_mean)[0]; cols = keep; genes = [var[j] for j in keep]
+    G = len(cols); pos = {g: i for i, g in enumerate(genes)}
 
-    # one pass: per-pert raw sums (all cells) + control raw covariance
-    psum = defaultdict(lambda: np.zeros(G)); pn = defaultdict(int)
+    tperts = pd.unique(pid[is_targ]); pidx = {p: i for i, p in enumerate(tperts)}
+    PS = np.zeros((len(tperts), G)); PN = np.zeros(len(tperts))
     s1 = np.zeros(G); s2 = np.zeros((G, G)); nctrl = 0
-    upert = pd.unique(pert); pidx = {p: i for i, p in enumerate(upert)}
-    PS = np.zeros((len(upert), G)); PN = np.zeros(len(upert))
     for i0 in range(0, N, CHUNK):
-        rows = slice(i0, min(i0 + CHUNK, N))
-        Xc = _densify(a[rows].to_memory().X)[:, cols].astype(np.float64)
-        pr = pert[rows]; cr = is_ctrl[rows]
-        ii = np.array([pidx[p] for p in pr])
-        np.add.at(PS, ii, Xc); np.add.at(PN, ii, 1.0)
-        if cr.any():
-            Xk = Xc[cr]; s1 += Xk.sum(0); s2 += Xk.T @ Xk; nctrl += Xk.shape[0]
+        sl = slice(i0, min(i0 + CHUNK, N))
+        Xsp = a[sl].to_memory().X
+        Xc = _densify(Xsp[:, cols]).astype(np.float64)          # RAW counts over the gene set (no norm)
+        ct = is_ctrl[sl]; tg = is_targ[sl]
+        if ct.any():
+            Xk = Xc[ct]; s1 += Xk.sum(0); s2 += Xk.T @ Xk; nctrl += Xk.shape[0]
+        if tg.any():
+            ii = np.array([pidx[p] for p in pid[sl][tg]]); np.add.at(PS, ii, Xc[tg]); np.add.at(PN, ii, 1.0)
     if nctrl < 2:
         return None
     ctrl_mean = s1 / nctrl
-    Sigma = (s2 - nctrl * np.outer(ctrl_mean, ctrl_mean)) / (nctrl - 1)
-    Sigma = 0.5 * (Sigma + Sigma.T)
-    deltas = {}
-    for p, i in pidx.items():
-        if p == C.CONTROL_PERT_ID or PN[i] < 1:
-            continue
-        deltas[p] = (PS[i] / PN[i] - ctrl_mean, int(PN[i]))
+    Sigma = (s2 - nctrl * np.outer(ctrl_mean, ctrl_mean)) / (nctrl - 1); Sigma = 0.5 * (Sigma + Sigma.T)
+    deltas = {p: (PS[i] / PN[i] - ctrl_mean, int(PN[i])) for p, i in pidx.items() if PN[i] >= min_cells}
     return dict(Sigma=Sigma, genes=genes, pos=pos, ctrl_mean=ctrl_mean, deltas=deltas, n_ctrl=nctrl)
 
 
@@ -186,7 +185,10 @@ def main(argv=None):
         if free < sz + args.min_headroom_gb * GB:
             print(f"[{d} {c}] STOP: {sz/GB:.0f} GiB needed, {free/GB:.0f} free", flush=True); break
         dest = tmp / f"{d}_{c}.assigned_guide.h5ad"; t0 = time.time()
-        print(f"[{d} {c}] downloading {sz/GB:.0f} GiB ...", flush=True); _download(key, dest)
+        if dest.exists() and abs(dest.stat().st_size - sz) < (1 << 20):
+            print(f"[{d} {c}] file already present ({sz/GB:.0f} GiB) — skipping download", flush=True)
+        else:
+            print(f"[{d} {c}] downloading {sz/GB:.0f} GiB ...", flush=True); _download(key, dest)
         print(f"[{d} {c}] one pass: raw Sigma_c + per-pert raw ΔX ({args.genes}) ...", flush=True)
         res = cipher_stratum(dest, args.genes, args.min_mean)
         if not args.keep_raw:
