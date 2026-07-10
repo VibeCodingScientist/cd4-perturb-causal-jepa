@@ -1,0 +1,161 @@
+{
+  "_meta": {
+    "source": "real",
+    "generated_utc": "2026-07-10T09:04:40+00:00",
+    "notes": "Fraction-of-ceiling from fraction_of_ceiling.csv; A/B/C via BUDGET.md formula on budget_decomposition.csv medians; cross-donor from budget_cross_donor.csv."
+  },
+  "budget": {
+    "condition": {
+      "A": 0.45,
+      "B": 0.33,
+      "C": 0.22,
+      "r_ceiling": 0.67
+    },
+    "gene": {
+      "A": 0.01,
+      "B": 0.22,
+      "C": 0.76,
+      "r_ceiling": 0.776
+    }
+  },
+  "frac_of_ceiling": {
+    "condition": [
+      {
+        "model": "ridge",
+        "label": "Ridge",
+        "family": "baseline",
+        "raw": 0.427,
+        "frac": 0.666,
+        "frac_lo": 0.648,
+        "frac_hi": 0.681
+      },
+      {
+        "model": "causal",
+        "label": "Causal (do-mask)",
+        "family": "ablation",
+        "raw": 0.352,
+        "frac": 0.547,
+        "frac_lo": 0.534,
+        "frac_hi": 0.562
+      },
+      {
+        "model": "jepa_causal",
+        "label": "JEPA + Causal",
+        "family": "ablation",
+        "raw": 0.354,
+        "frac": 0.547,
+        "frac_lo": 0.535,
+        "frac_hi": 0.556
+      },
+      {
+        "model": "jepa_only",
+        "label": "JEPA (no mask)",
+        "family": "ablation",
+        "raw": 0.254,
+        "frac": 0.394,
+        "frac_lo": 0.374,
+        "frac_hi": 0.415
+      },
+      {
+        "model": "noncausal",
+        "label": "Transformer (no mask)",
+        "family": "ablation",
+        "raw": 0.24,
+        "frac": 0.371,
+        "frac_lo": 0.349,
+        "frac_hi": 0.391
+      },
+      {
+        "model": "fcn",
+        "label": "PseudoBulk-FCN",
+        "family": "baseline",
+        "raw": 0.091,
+        "frac": 0.142,
+        "frac_lo": 0.122,
+        "frac_hi": 0.16
+      }
+    ],
+    "gene": [
+      {
+        "model": "causal",
+        "label": "Causal (do-mask)",
+        "family": "ablation",
+        "raw": 0.42,
+        "frac": 0.555,
+        "frac_lo": 0.509,
+        "frac_hi": 0.607
+      },
+      {
+        "model": "jepa_causal",
+        "label": "JEPA + Causal",
+        "family": "ablation",
+        "raw": 0.419,
+        "frac": 0.552,
+        "frac_lo": 0.512,
+        "frac_hi": 0.599
+      },
+      {
+        "model": "jepa_only",
+        "label": "JEPA (no mask)",
+        "family": "ablation",
+        "raw": 0.301,
+        "frac": 0.387,
+        "frac_lo": 0.32,
+        "frac_hi": 0.45
+      },
+      {
+        "model": "noncausal",
+        "label": "Transformer (no mask)",
+        "family": "ablation",
+        "raw": 0.226,
+        "frac": 0.301,
+        "frac_lo": 0.218,
+        "frac_hi": 0.379
+      },
+      {
+        "model": "fcn",
+        "label": "PseudoBulk-FCN",
+        "family": "baseline",
+        "raw": 0.132,
+        "frac": 0.16,
+        "frac_lo": 0.053,
+        "frac_hi": 0.228
+      },
+      {
+        "model": "ridge",
+        "label": "Ridge",
+        "family": "baseline",
+        "raw": 0.013,
+        "frac": 0.017,
+        "frac_lo": -0.007,
+        "frac_hi": 0.066
+      }
+    ]
+  },
+  "cross_donor": {
+    "condition": {
+      "specific_r": 0.0317,
+      "null_p95": 0.0018,
+      "perm_p": 0.0,
+      "n_perts": 2269
+    },
+    "gene": {
+      "specific_r": 0.0492,
+      "null_p95": 0.0029,
+      "perm_p": 0.0,
+      "n_perts": 318
+    }
+  },
+  "recovery": {
+    "gene": {
+      "causal_frac": 0.555,
+      "pct_recovered": 56,
+      "gap_pct": 44
+    }
+  },
+  "notes": [
+    "Report scores as fraction-of-ceiling, per axis \u2014 raw Pearson-\u03b4 is baseline-dominated and hides the dissociation.",
+    "The A/C split is an inference: it treats Ridge's held-out fraction-of-ceiling as the linear-reachable estimate.",
+    "Reliability (the ceiling) is an upper bound on any model's achievable \u03b4, not a guarantee a model reaching it exists."
+  ]
+}
