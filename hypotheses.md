@@ -127,3 +127,27 @@ paper's own 2-gRNA-per-gene design.
 **Conclusion:** the per-perturbation frontier is a **real noise floor** (donor-averaging *helps*), not a
 donor-averaging artifact. The "0.48" was a noise-model estimate, not empirical (independent-guide
 within-donor concordance ≈ 0.016). Fifth clean negative; build (G13) not licensed; no GPU spent.
+
+---
+
+## C-REL — Relational-Object recovery (pre-registered 2026-07-10; gate-tested same day)
+
+Hypothesis: five negatives all scored the *pointwise* δ_p (floored ~0.03); the *relational* structure
+over perturbations (similarity S, loadings L, per-gene rank R) is a different object that averages over
+genes and may be recoverable in **specific** (shared-program-removed) space.
+
+- **C-REL.1 (recoverability, specific space).** Cross-donor reproducibility of ≥1 specific-space
+  relational object ≥ 0.30 (vs the 0.03 pointwise floor), gain absent under permutation. **RESULT:
+  FAIL** — S = 0.008, L(top-3) = 0.11 (best factor 0.17, above its 0.019 null but ≪ 0.30), R = 0.025;
+  even top-200 high-effect perts S = 0.037. Machinery calibrated (reproduces the 0.049 pointwise floor;
+  detects the L-factor whisker). The floor is object-general. *(Reported discrepancy: raw-space S = 0.007,
+  not the ~0.9 the brief expected — the ~0.9 is the constant baseline of raw cosines, not a reproducible
+  pattern.)*
+- **C-REL.2 (biology, anti-triviality).** Recovers Marson regulators above a degree-preserving null.
+  **NOT RUN** — gated on C-REL.1; no reproducible specific-relational structure to test.
+- **C-REL.3 (the build).** Relational-JEPA predicts held-out relational structure above the pointwise
+  floor while the frozen pointwise eval stays floored. **NOT RUN** (G14 unlicensed).
+
+**Conclusion:** relational structure is floored too — pointwise *and* relational, raw *and* specific,
+whole-population *and* high-effect subset. **Sixth clean negative;** the frontier's noise floor is
+object-general. No GPU spent.
