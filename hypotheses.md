@@ -102,3 +102,28 @@ shifting an endpoint, so the identifiable target is a scalar displacement `s_p =
   null 0.03), i.e. at the floor, and C-TC.1 failed. No build; no GPU spent.
 
 **Conclusion:** predictability is *not* a trajectory-geometry property on this data.
+
+---
+
+## C-DON — Donor-Structured Recovery (pre-registered 2026-07-10; gate-tested same day)
+
+Hypothesis: the per-perturbation "noise floor" is a cross-donor-*averaging* artifact — per-perturbation
+reproducibility is 0.48 within-donor vs 0.03 cross-donor, so donor-specific structure exists and a
+donor-conditioned predictor could recover it (revising the noise-floor headline). Tested with the
+paper's own 2-gRNA-per-gene design.
+
+- **C-DON.1 (biology vs batch).** Within-donor same-gene independent-guide concordance exceeds the
+  different-gene baseline (Δ ≥ 0.15, p < 0.01, ≥ 3/4 donors), not explained by technical covariates or
+  cell-state composition. **RESULT: NO-GO** — same-gene concordance *is* significantly above
+  different-gene (Δ ≈ 0.017, 4/4 donors, perm p < 0.001, survives composition-correction; not
+  run-driven, corr(|s|,run) = −0.08), so there is real target-specific biology, **but at noise-floor
+  magnitude** — Δ ≈ 0.017 is ~8× below the 0.15 bar.
+- **C-DON.2 (recoverability).** A donor-conditioned predictor beats donor-averaged AND
+  predict-the-donor-mean on within-donor held-out guides (≥ 0.20 vs 0.03), gain absent under
+  donor-label permutation. **RESULT: NO-GO** — donor-conditioned = 0.016 (≪ 0.20); worse than
+  donor-averaged (0.034) and donor-permuted (0.024). Donor-conditioning gives *negative* gain;
+  averaging denoises and predicts better.
+
+**Conclusion:** the per-perturbation frontier is a **real noise floor** (donor-averaging *helps*), not a
+donor-averaging artifact. The "0.48" was a noise-model estimate, not empirical (independent-guide
+within-donor concordance ≈ 0.016). Fifth clean negative; build (G13) not licensed; no GPU spent.
