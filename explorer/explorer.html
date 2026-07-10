@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CD4+ Perturbation Explorer</title>
+  <meta name="description" content="Interactive explorer for predicting CRISPRi perturbation effects in primary human CD4+ T cells (GSE278572)." />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <header class="app__header">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true" data-icon="dna"></span>
+        <span class="brand__name">CD4+ Perturbation Explorer</span>
+      </div>
+      <span class="brand__sub">CRISPRi Perturb-seq · GSE278572</span>
+      <span class="header__spacer"></span>
+      <span class="badge-real" id="badge-real" hidden>
+        <span data-icon="check" aria-hidden="true"></span> real results
+      </span>
+      <span class="badge-demo" id="badge-demo" role="status" aria-live="polite">
+        <span class="dot" aria-hidden="true"></span> demo data — not final results
+      </span>
+    </header>
+
+    <nav class="app__nav" id="nav" aria-label="Panels"></nav>
+
+    <main class="app__main" id="main" role="main" tabindex="-1"></main>
+
+    <div class="app__control" id="control" aria-label="Controls" role="group"></div>
+  </div>
+
+  <!-- vendored, offline -->
+  <script src="./assets/vendor/d3.v7.min.js"></script>
+  <!-- core -->
+  <script src="./app.js"></script>
+  <!-- panels (each self-registers into App) -->
+  <script src="./panels/act1-dooperator.js"></script>
+  <script src="./panels/act2-budget.js"></script>
+  <script src="./panels/act3-frontier.js"></script>
+  <!-- boot -->
+  <script>window.App && App.boot();</script>
+</body>
+</html>

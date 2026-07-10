@@ -1,0 +1,26 @@
+/* Vendored fonts — offline. Falls back to system fonts if these fail to load. */
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url("./InstrumentSerif-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Instrument Serif";
+  font-style: italic; font-weight: 400; font-display: swap;
+  src: url("./InstrumentSerif-Italic.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-style: normal; font-weight: 400; font-display: swap;
+  src: url("./Satoshi-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-style: normal; font-weight: 500; font-display: swap;
+  src: url("./Satoshi-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Satoshi";
+  font-style: normal; font-weight: 700; font-display: swap;
+  src: url("./Satoshi-Bold.woff2") format("woff2");
+}

@@ -10,4 +10,6 @@ checkpoints/
 *.h5ad
 *.parquet
 !results/*.csv
+# the explorer's small, committed, verified JSON (source:"real") is NOT a DATA_ROOT artifact
+!explorer/data/
 .DS_Store

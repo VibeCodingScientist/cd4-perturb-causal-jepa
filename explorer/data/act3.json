@@ -1,0 +1,233 @@
+{
+  "_meta": {
+    "source": "real",
+    "generated_utc": "2026-07-10T09:04:40+00:00",
+    "notes": "Floor + residual identity from phaseB; six gate verdicts with numbers pulled from each gate CSV."
+  },
+  "floor": {
+    "value": 0.033,
+    "label": "cross-donor per-perturbation specific signal (top-50 DEG)",
+    "triangulation": "the same ~0.03 floor recurs in the budget cross-donor test, the SNR pre-check, the trajectory scalar, the donor \u0394, and the relational objects."
+  },
+  "residual": {
+    "program": "transient T-cell activation-cytokine program",
+    "peaks": "Rest \u2192 Stim8hr transition (4/4 donors)",
+    "top_genes": [
+      {
+        "symbol": "TMSB4X",
+        "annotation": "cytoskeletal (highly expressed)",
+        "mass_frac": 0.0149
+      },
+      {
+        "symbol": "IFNG",
+        "annotation": "effector cytokine (Th1)",
+        "mass_frac": 0.0149
+      },
+      {
+        "symbol": "CCL4",
+        "annotation": "chemokine",
+        "mass_frac": 0.0147
+      },
+      {
+        "symbol": "LTB",
+        "annotation": "lymphotoxin beta (TNF family)",
+        "mass_frac": 0.0143
+      },
+      {
+        "symbol": "IL3",
+        "annotation": "cytokine (chr5q31 cluster)",
+        "mass_frac": 0.0123
+      },
+      {
+        "symbol": "CCL3",
+        "annotation": "chemokine",
+        "mass_frac": 0.0088
+      },
+      {
+        "symbol": "TRBC1",
+        "annotation": "TCR beta constant",
+        "mass_frac": 0.0074
+      },
+      {
+        "symbol": "PFN1",
+        "annotation": "profilin (cytoskeletal)",
+        "mass_frac": 0.0069
+      },
+      {
+        "symbol": "CSF2",
+        "annotation": "GM-CSF cytokine (chr5q31 cluster)",
+        "mass_frac": 0.0068
+      },
+      {
+        "symbol": "CXCL8",
+        "annotation": "chemokine (IL8)",
+        "mass_frac": 0.0065
+      },
+      {
+        "symbol": "IL2RA",
+        "annotation": "IL2 receptor alpha (activation marker)",
+        "mass_frac": 0.0058
+      },
+      {
+        "symbol": "S100A4",
+        "annotation": "calcium-binding",
+        "mass_frac": 0.0057
+      }
+    ]
+  },
+  "gates": [
+    {
+      "id": "causal_matrix",
+      "n": 1,
+      "name": "Causal-matrix (\u00c2_C)",
+      "family": [
+        "pointwise",
+        "specific"
+      ],
+      "verdict": "FAIL",
+      "headline": "Explicit per-context causal matrix does not beat correlation under P\u226aG.",
+      "key_number": {
+        "label": "mechanism AUROC vs corr-null",
+        "value": "0.62 vs 0.83",
+        "detail": "gap -0.20 (95% CI -0.30\u2026-0.10, excludes 0)"
+      },
+      "numbers": {
+        "mechanism_auroc": 0.624,
+        "corr_null_auroc": 0.828,
+        "true_col_auroc": 1.0,
+        "gap": -0.203,
+        "gap_lo": -0.296,
+        "gap_hi": -0.101
+      },
+      "aside": "Standalone positive: the linear transportability condition itself degrades (oracle AUROC 1.00 \u2192 0.88) as the system becomes nonlinear.",
+      "csv": "mechanism/results/c4_auroc.csv"
+    },
+    {
+      "id": "fluctuation",
+      "n": 2,
+      "name": "Fluctuation (third moment)",
+      "family": [
+        "pointwise",
+        "raw"
+      ],
+      "verdict": "NEGATIVE",
+      "headline": "On real data the baseline third moment is orthogonal to the residual \u2014 the simulator signal does not survive.",
+      "key_number": {
+        "label": "\u0394R\u00b2 across strata",
+        "value": "\u2248 0.000",
+        "detail": "mean 0.0000 over 24/24 strata (was +0.6\u20130.75 on the simulator)"
+      },
+      "numbers": {
+        "dR2_mean": 2e-05,
+        "dR2_absmax": 0.00012,
+        "n_strata": 24
+      },
+      "aside": "The covariance/Lyapunov sufficiency that makes correlation hard to beat is a second-moment property; the third moment was the one place signal could hide. It does not, on CD4 data.",
+      "csv": "mechanism/results/cnl_realdata_gate.csv"
+    },
+    {
+      "id": "single_cell",
+      "n": 3,
+      "name": "Single-cell resolution (CellCap SNR)",
+      "family": [
+        "pointwise",
+        "specific"
+      ],
+      "verdict": "NOT GREEN",
+      "headline": "Single-cell resolution would not recover the per-perturbation residual \u2014 a confirmed noise floor at pseudobulk depth.",
+      "key_number": {
+        "label": "fraction detectable at SNR\u22653",
+        "value": "17%",
+        "detail": "reaching a usable floor needs ~12\u00d7 more cells; green = 0"
+      },
+      "numbers": {
+        "xdonor_top50": 0.0335,
+        "frac_detectable_snr3": 0.174,
+        "cells_multiple": 12.4,
+        "green": 0
+      },
+      "aside": "Reached with zero GPU / zero egress \u2014 no 130 GB of single cells were pulled to prove a negative.",
+      "csv": "results/phaseB_snr_precheck_summary.csv"
+    },
+    {
+      "id": "trajectory",
+      "n": 4,
+      "name": "Trajectory-coupling",
+      "family": [
+        "relational",
+        "specific"
+      ],
+      "verdict": "CLEAN NEGATIVE",
+      "headline": "Recoverability is not a trajectory-geometry property \u2014 no dynamical model was fit or needed.",
+      "key_number": {
+        "label": "partial \u03c1 (R, trajectory-coupling)",
+        "value": "+0.007 / +0.034",
+        "detail": "condition / gene, p = 0.75 / 0.55 (bar |\u03c1|\u22650.3)"
+      },
+      "numbers": {
+        "condition": {
+          "partial_spearman": 0.007,
+          "perm_p": 0.754
+        },
+        "gene": {
+          "partial_spearman": 0.034,
+          "perm_p": 0.549
+        }
+      },
+      "aside": "The reduced scalar target itself sits at the noise floor (~0.07 vs random-axis null 0.03).",
+      "csv": "results/trajectory_coupling_gate.csv"
+    },
+    {
+      "id": "donor_structure",
+      "n": 5,
+      "name": "Donor-structured recovery",
+      "family": [
+        "relational",
+        "specific"
+      ],
+      "verdict": "NO-GO",
+      "headline": "Within-donor same-gene structure is real but at noise-floor magnitude, and donor-averaging beats donor-conditioning \u2014 the reversal is refuted.",
+      "key_number": {
+        "label": "same-gene within-donor \u0394",
+        "value": "0.012\u20130.018",
+        "detail": "4/4 donors, well below the \u0394\u22650.15 bar; conditioning 0.016 < averaging 0.034 (the gap inverts)"
+      },
+      "numbers": {
+        "within_donor_delta_lo": 0.012,
+        "within_donor_delta_hi": 0.018,
+        "within_donor_delta_median": 0.014,
+        "conditioning": 0.016,
+        "averaging": 0.034
+      },
+      "aside": "An earlier within-donor reproducibility figure that motivated this test was a noise-model estimate, not an empirical measurement \u2014 and the real gap inverts.",
+      "csv": "results/donor_structure_gate.csv"
+    },
+    {
+      "id": "relational",
+      "n": 6,
+      "name": "Relational (perturbation similarity)",
+      "family": [
+        "relational",
+        "raw"
+      ],
+      "verdict": "NEGATIVE",
+      "headline": "Cross-donor relational structure (which perturbations resemble which) is at the floor \u2014 all five relational objects fail.",
+      "key_number": {
+        "label": "cross-donor S-similarity (specific)",
+        "value": "0.008",
+        "detail": "the strong cross-donor similarity a response-theory simulator suggested does not appear \u2014 measured 0.008, at the floor. 5/5 objects fail."
+      },
+      "numbers": {
+        "S_similarity": 0.008,
+        "pointwise_floor": 0.049,
+        "L_loadings_top3": 0.111,
+        "R_pergene_rank": 0.025,
+        "S_top200_higheffect": 0.037,
+        "all_fail": true
+      },
+      "aside": "The last of the six, spanning to relational + raw structure \u2014 the floor holds even when you ask which perturbations look alike.",
+      "csv": "results/relational_gate.csv"
+    }
+  ],
+  "summary": "Six pre-registered negatives \u2014 causal-matrix, fluctuation, single-cell, trajectory, donor-structure, relational \u2014 converge on the same pointwise floor, spanning pointwise and relational, raw and specific. Zero GPU across all six. We bounded the frontier honestly; we did not solve perturbation prediction."
+}

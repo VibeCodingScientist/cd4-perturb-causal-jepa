@@ -1,0 +1,101 @@
+{
+  "_meta": {
+    "source": "real",
+    "generated_utc": "2026-07-10T09:04:40+00:00",
+    "notes": "Dataset facts + CSV\u2192panel provenance map."
+  },
+  "dataset": {
+    "cells": 22000000,
+    "genes": 18129,
+    "profiles": 278684,
+    "conditions": [
+      "Rest",
+      "Stim8hr",
+      "Stim48hr"
+    ],
+    "donors": 4,
+    "held_out_condition": "Stim48hr",
+    "perturbations": {
+      "condition": 2269,
+      "gene": 318
+    },
+    "cell_type": "CD4+ T cells",
+    "assay": "CRISPRi Perturb-seq",
+    "accession": "GSE278572"
+  },
+  "splits": [
+    {
+      "id": "condition",
+      "label": "Condition hold-out",
+      "sub": "zero-shot Stim48hr"
+    },
+    {
+      "id": "gene",
+      "label": "Gene hold-out",
+      "sub": "unseen silenced genes"
+    }
+  ],
+  "provenance": [
+    {
+      "panel": "Act 1 \u00b7 do-operator",
+      "csv": "results/benchmark_table.csv",
+      "shows": "leaderboard + C2 (causal \u2212 non-causal)"
+    },
+    {
+      "panel": "Act 1 \u00b7 do-operator",
+      "csv": "results/do_operator_localization.csv",
+      "shows": "edge concentrates on reliable perturbations"
+    },
+    {
+      "panel": "Act 2 \u00b7 budget",
+      "csv": "results/fraction_of_ceiling.csv",
+      "shows": "raw \u03b4 beside fraction-of-ceiling, per axis"
+    },
+    {
+      "panel": "Act 2 \u00b7 budget",
+      "csv": "results/budget_decomposition.csv",
+      "shows": "A linear / B noise / C structured partition"
+    },
+    {
+      "panel": "Act 2 \u00b7 budget",
+      "csv": "results/budget_cross_donor.csv",
+      "shows": "bucket C is real (cross-donor perm p<0.001)"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "results/phaseB_top_residual_genes.csv",
+      "shows": "residual identity = activation-cytokine program"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "results/phaseB_snr_precheck_summary.csv",
+      "shows": "single-cell (CellCap) SNR gate + the ~0.03 floor"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "mechanism/results/c4_auroc.csv",
+      "shows": "gate 1 \u2014 causal-matrix (\u00c2_C)"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "mechanism/results/cnl_realdata_gate.csv",
+      "shows": "gate 2 \u2014 fluctuation / third-moment"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "results/trajectory_coupling_gate.csv",
+      "shows": "gate 4 \u2014 trajectory-coupling"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "results/donor_structure_gate.csv",
+      "shows": "gate 5 \u2014 donor-structured recovery"
+    },
+    {
+      "panel": "Act 3 \u00b7 frontier",
+      "csv": "results/relational_gate.csv",
+      "shows": "gate 6 \u2014 relational"
+    }
+  ],
+  "any_real": true
+}
