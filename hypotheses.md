@@ -80,3 +80,25 @@ genuine **extension**. Either way the 2×2 answers a real question.
   AUPRC, E-distance.
 - The mode-collapse detector is essential: models that "win" MAE by predicting the
   control/mean are surfaced explicitly.
+
+---
+
+## C-TC — Trajectory-Coupling (pre-registered 2026-07-09; gate-tested same night)
+
+Hypothesis: predictability is a *dynamical* property — unrecoverable perturbations move the cell
+*along* the activation trajectory (a fixed axis `a` = Rest→Stim48hr control shift) rather than
+shifting an endpoint, so the identifiable target is a scalar displacement `s_p = proj(δ_p, a)`.
+
+- **C-TC.1 (geometry).** Recoverability `R_p` (do-operator `causal_frac_of_ceiling`) decreases as
+  trajectory-coupling `TC_p = |proj(δ_p,a)|/‖δ_p‖` increases.
+  *Pre-registered PASS:* |partial Spearman(R_p, TC_p | ‖δ‖, reliability)| ≥ 0.30, p < 0.01, sign
+  consistent ≥ 3/4 donors. **RESULT: FAIL** — partial ρ = +0.007 (condition), +0.034 (gene);
+  p = 0.75 / 0.55; 1D and 2D activation subspace both ≈ 0.
+
+- **C-TC.2 (build).** A predictor of `s_p`, reconstructed as `δ̂ = ŝ·a`, beats the do-operator on
+  high-TC gene-holdout perturbations, with the win from per-perturbation variance of `ŝ` (not the
+  shared mean; mode-collapse-guarded). *Gated on C-TC.1 passing AND `s_p` reproducing above the ~0.03
+  floor (G-TC.0).* **NOT RUN** — G-TC.0 found `s_p` cross-donor reproducibility ~0.07 (≈ random-axis
+  null 0.03), i.e. at the floor, and C-TC.1 failed. No build; no GPU spent.
+
+**Conclusion:** predictability is *not* a trajectory-geometry property on this data.
