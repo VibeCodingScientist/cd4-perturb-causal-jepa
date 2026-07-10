@@ -175,6 +175,7 @@ baseline-dominated), and results are framed as attempts against a measured targe
 | **Residual localization + SNR pre-check** | the unrecovered residual **is the transient activation-cytokine program** (IFNG/IL2/CSF2/chemokines, peaks Stim8hr); the per-perturbation frontier is a **confirmed noise floor** at pseudobulk depth — single-cell resolution would not fix it (no 130 GB spent) | [`PHASEB.md`](PHASEB.md) |
 | **Mechanism line** | Â_C (spikes #1/#2) **FAIL** under P≪G; C-NL third-moment gate **positive** on the simulator; C-NL real-data **NEGATIVE** (third moment orthogonal, 12/12 strata) | [`mechanism/`](mechanism/), [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md) |
 | **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](TRAJECTORY.md) |
+| **Donor-structured recovery** | **NO-GO** — within-donor same-gene concordance is real but at noise-floor magnitude (Δ≈0.017); donor-*averaging* beats donor-*conditioning* (0.034 vs 0.016); the floor is real, reversal refuted on the dataset's own 2-guide design | [`DONOR.md`](DONOR.md) |
 
 **Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
 bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from
@@ -239,6 +240,20 @@ partial Spearman(R,TC | magnitude, reliability) = **+0.007 (condition), +0.034 (
 null 0.03). Predictability is **not** a trajectory-geometry property here; no build ran. The gate projects
 onto a *measured* axis only — it fits **no** dynamical model (3 timepoints underdetermine a vector field).
 Full readout: [`TRAJECTORY.md`](TRAJECTORY.md).
+
+### Donor-structured recovery (fifth clean negative)
+
+Tested whether the per-perturbation floor is a cross-donor-*averaging* artifact — a memo showed 0.48
+within-donor vs 0.03 cross-donor reproducibility (16× gap), suggesting recoverable donor-specific
+structure. A two-part CPU gate (pre-registered C-DON.1/C-DON.2 in [`hypotheses.md`](hypotheses.md)),
+run against the dataset's own **2-gRNA/gene** design, **both fail.** Step 0 confirmed the two guides
+per gene are batch-orthogonal (span both 10x runs), so the test is valid. **G-D.1:** same-gene
+independent-guide within-donor concordance *is* significant (Δ≈0.017, 4/4 donors, perm p<0.001,
+survives composition-correction) — real target-specific biology, but ~8× below the Δ≥0.15 bar, i.e. at
+noise-floor magnitude. **G-D.2:** donor-conditioned recovery (0.016) is beaten by donor-*averaging*
+(0.034) and even wrong-donor (0.024) — donor-conditioning gives *negative* gain. The "0.48" was a
+noise-*model* estimate, not empirical; the 16× gap **inverts** (averaging helps). The floor is real;
+the reversal is refuted. No build (G13 unlicensed). Full readout: [`DONOR.md`](DONOR.md).
 
 ## License
 

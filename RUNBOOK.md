@@ -80,3 +80,15 @@ model. Commit `results/benchmark_table.csv` + `split_manifest.json` + `split/hvg
 CP2 (Developer 2): the JEPA cells of the 2×2 need the per-donor cell h5ads
 (`s3://genome-scale-tcell-perturb-seq/marson2025_data/D*_*.assigned_guide.h5ad`, ~118–173 GB
 each) — subsample per §7e; submit `jepa` / `jepa_finetune` to the same queue.
+
+## 7. Box infra notes (supplementary CPU gates)
+
+- **Run CZI-reading gates in the FOREGROUND** over SSH with `-o ServerAliveInterval=15` (and a
+  `timeout`), e.g. `ssh -o ServerAliveInterval=15 box 'cd ~/gate && CD4_DATA_ROOT=... timeout 400
+  python -u scripts/<gate>.py'`. Detached `setsid nohup ... & disown` launches **died silently**
+  (empty logs, no traceback) during the C-DON gate — do not rely on them for the multi-minute
+  CZI read. The 44 GB pseudobulk is OS-page-cached after the first read, so re-runs are fast.
+- **Large per-guide aggregation** (mean over conditions across ~90k guide×donor groups on 3,000
+  HVG): use `np.argsort` + `np.add.reduceat` on a `float32` array. `np.add.at` (unbuffered, slow)
+  and `pd.DataFrame(s).groupby(...).mean()` (4 GB copy) both stalled/OOM'd G-D.2. Science was
+  unaffected — G-D.1 reproduced identically across three runs.
