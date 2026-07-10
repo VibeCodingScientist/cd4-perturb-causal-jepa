@@ -180,3 +180,22 @@ well-formed throughout, so orthogonality rather than weakness. Room exists (firs
 worse under stimulation) but the third moment fills none of it → **no-go on a third-moment closed-form
 for real CD4**. Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
 The three-stage arc (spikes FAIL → simulator gate LIVE → real-data NEGATIVE) is the closed mechanism line.
+
+## 9. Developer 3 — explorer (**MERGED to main**, ready for the freeze)
+
+The judge-facing interactive explorer is merged (`explorer/`). It tells the current three-act
+arc, and **every number on screen is read from the committed result CSVs on `main`**
+(`source:"real"`, so the "demo data" badge is gone). Independently number- and honesty-verified.
+
+- **Launch (one step, no build):** open `explorer/explorer_bundle.html` — self-contained, offline,
+  no server. Or serve the folder: `cd explorer && python3 -m http.server 8000`.
+- **Acts:** (1) the do-operator works — C2 **+0.118** condition / **+0.162** gene, edge localizes to
+  reliable perts; (2) the predictability budget — raw δ beside fraction-of-ceiling, bucket **C ≈ 0.76**
+  (gene) real at p<0.001; (3) the frontier mapped six ways — the ~**0.03** floor, six pre-registered
+  negatives each with its gate CSV, residual = the activation-cytokine program.
+- **Re-wire from `main`:** `<repo>/.venv/bin/python explorer/export_app_json.py` (prints a
+  verification table; writes `explorer/data/*.json`). CSV→panel provenance is in
+  `explorer/README.md` and `data/manifest.json`. 3-minute cut in `explorer/STORYBOARD.md`.
+- Touches only `explorer/` (+ a scoped `.gitignore` negation for `explorer/data`). No core/CP2 files.
+
+**Signal: explorer merged — the final submission freeze can be cut.**
