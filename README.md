@@ -161,7 +161,27 @@ concurrency across up to two `git worktree` checkouts that share the one queue.
   demo figures; `snakemake --cores all` end-to-end.
 - **CP3** — reproducibility package tagged; full 8-metric appendix; one-command rerun.
 
-## Supplementary — mechanism recovery
+## Supplementary analyses — the full arc
+
+Beyond the primary CP1/CP2 benchmark, a sequence of pre-registered supplementary analyses probe *why*
+the hard perturbations are hard. Each is committed with an honest one-line verdict and a pointer;
+every claim is **fraction-of-ceiling / partial-correlation, per axis** (raw Pearson-δ is
+baseline-dominated), and results are framed as attempts against a measured target, not solved problems.
+
+| Analysis | One-line verdict | Pointer |
+|---|---|---|
+| **Primary — CP1/CP2** | do-operator (C2) confirmed: causal beats its non-causal twin **+0.118 condition / +0.162 gene**; JEPA 2×2 + VOI | [`RESULTS.md`](RESULTS.md), [`CP2_SUMMARY.md`](CP2_SUMMARY.md), `results/benchmark_table.csv` |
+| **Predictability budget** | benchmark is **not noise-saturated**; bucket C (structured, gene ≈0.76 of ceiling) is real (cross-donor perm p<0.001); report fraction-of-ceiling per axis | [`BUDGET.md`](BUDGET.md) |
+| **Residual localization + SNR pre-check** | the unrecovered residual **is the transient activation-cytokine program** (IFNG/IL2/CSF2/chemokines, peaks Stim8hr); the per-perturbation frontier is a **confirmed noise floor** at pseudobulk depth — single-cell resolution would not fix it (no 130 GB spent) | [`PHASEB.md`](PHASEB.md) |
+| **Mechanism line** | Â_C (spikes #1/#2) **FAIL** under P≪G; C-NL third-moment gate **positive** on the simulator; C-NL real-data **NEGATIVE** (third moment orthogonal, 12/12 strata) | [`mechanism/`](mechanism/), [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md) |
+| **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](TRAJECTORY.md) |
+
+**Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
+bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from
+response theory, not a CIPHER claim. Reliability is an *upper bound* on any model's achievable δ, not a
+guarantee a model reaching it exists.
+
+### Mechanism recovery
 
 A reproducible synthetic study ([`mechanism/`](mechanism/), CPU-only) testing whether explicit
 per-context causal-matrix (`Â_C`) estimation beats correlation baselines for cross-context
@@ -188,6 +208,37 @@ That go/no-go has now been run, and it **closes the line as a negative**: on rea
 variance unexplained, and its fit degrades further under stimulation) but the third moment fills none of
 it. The simulator signal does not survive real single-cell estimation error → **no-go on a third-moment
 closed-form.** Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
+
+### Predictability budget
+
+A CPU-only partition of each perturbation's response into **B** irreducible noise (0.22 gene / 0.33
+condition), **A** linear-explainable, and **C** structured residual, on the eval metric's own scale. The
+ceiling is far from saturated; bucket C is large on the gene axis (≈0.76) and **real** — the
+perturbation-specific residual reproduces across donors ~60–100× above a shuffled-label null (perm
+p<0.001). The do-operator recovers ~56% of it; ~44% is a located gap. Reframes the benchmark as
+**fraction-of-ceiling, per axis**. Full readout: [`BUDGET.md`](BUDGET.md).
+
+### Residual localization + single-cell SNR pre-check
+
+The bucket-C residual is localized to the **transient T-cell activation cytokine program** (IFNG, IL2,
+CSF2, IL3/IL13, CCL/CXCL chemokines, IL2RA) that peaks at the Rest→Stim8hr transition (4/4 donors,
+effect/confound-controlled) — a far-from-equilibrium response. Its reproducible part is a *shared*
+program; the *per-perturbation* residual is noise-limited at pseudobulk (cross-donor ~0.03). A
+pre-registered SNR pre-check asked whether single-cell resolution would recover it and found **no** —
+single-cell adds no cells (pseudobulk is sufficient for the mean); reaching a usable floor needs ~12×
+cells or ~8% concentration, projected best-case ~0.10. A **confirmed noise floor**, reached with zero
+GPU/egress. Full readout: [`PHASEB.md`](PHASEB.md).
+
+### Trajectory-coupling (clean negative)
+
+Tested whether predictability is a *dynamical-geometry* property — unrecoverable perturbations moving the
+cell *along* the activation axis, reducible to a scalar displacement. A two-part CPU gate (pre-registered
+C-TC.1/C-TC.2 in [`hypotheses.md`](hypotheses.md)) **both fail**: recoverability vs trajectory-coupling
+partial Spearman(R,TC | magnitude, reliability) = **+0.007 (condition), +0.034 (gene)**, p = 0.75/0.55
+(bar was |ρ|≥0.3) — 1D and 2D; and the scalar target reproduces at ~0.07, at the noise floor (random-axis
+null 0.03). Predictability is **not** a trajectory-geometry property here; no build ran. The gate projects
+onto a *measured* axis only — it fits **no** dynamical model (3 timepoints underdetermine a vector field).
+Full readout: [`TRAJECTORY.md`](TRAJECTORY.md).
 
 ## License
 
