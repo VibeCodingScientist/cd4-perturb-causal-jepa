@@ -82,10 +82,10 @@ interface is `core/contract.py` — both developers code against it and never co
 | Baselines (Ridge/TabPFN/FCN) | `core/models/baselines.py` | Dev 1 | done |
 | GPU queue (serial single-GPU scheduler) | `gpu_queue.py` | Dev 1 | done |
 | Pipeline + env + box scripts | `Snakefile`, `environment.yml`, `scripts/` | Dev 1 | done |
-| **JEPA pretraining (EMA teacher, single-cell)** | `core/models/jepa.py` | **Dev 2** | TODO (CP2) |
-| **JEPA→causal integration + 2×2 harness** | (new) | **Dev 2** | TODO (CP2) |
-| **VOI + subsampling** | `core/voi.py` | **Dev 2** | TODO (CP2) |
-| **Figures** | `figures/` | **Dev 2** | TODO (CP2) |
+| **JEPA pretraining (EMA teacher, single-cell)** | `core/models/jepa.py` | **Dev 2** | done (CP2) |
+| **JEPA→causal integration + 2×2 harness** | (new) | **Dev 2** | done (CP2) |
+| **VOI + subsampling** | `core/voi.py` | **Dev 2** | done (CP2) |
+| **Figures** | `figures/` | **Dev 2** | done (CP2) |
 
 **Tests (6 files, all green locally + on the box):** `test_core_synthetic`,
 `test_baselines_synthetic`, `test_do_mask` (proves the mask propagates + clamps; guards against

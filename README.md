@@ -19,6 +19,20 @@ The full technical specification is [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN
 The pre-registered hypotheses are in [`hypotheses.md`](hypotheses.md) and were
 committed **before** any model saw data.
 
+## Results at a glance
+
+- **Headline (do-operator, C2).** The interventional causal mask beats its non-causal twin on
+  zero-shot perturbation prediction — Pearson-δ (top-50 DEGs) **+0.118** on the condition hold-out
+  and **+0.162** on the gene hold-out ([`results/benchmark_table.csv`](results/benchmark_table.csv):
+  causal 0.344/0.368 vs non-causal 0.226/0.206). On a **fraction-of-ceiling** axis (the honest metric —
+  raw δ is baseline-dominated) the do-operator reaches **0.55** of the achievable gene-axis signal,
+  where a linear model collapses to **0.02** ([`BUDGET.md`](BUDGET.md)).
+- **The frontier is mapped, honestly.** Six *pre-registered* CPU gates asked whether the
+  per-perturbation prediction floor (~**0.03** cross-donor) can be broken — causal-matrix, fluctuation,
+  single-cell SNR, trajectory-geometry, donor-structure, relational structure. **All six are clean
+  negatives**, each traceable to a committed gate CSV, **zero GPU spent**. The floor is real and
+  object-general. → [**Supplementary analyses — the full arc**](#supplementary-analyses--the-full-arc).
+
 ---
 
 ## Dataset
@@ -161,12 +175,28 @@ concurrency across up to two `git worktree` checkouts that share the one queue.
   demo figures; `snakemake --cores all` end-to-end.
 - **CP3** — reproducibility package tagged; full 8-metric appendix; one-command rerun.
 
+**Split integrity.** The frozen split is SHA-bound: `core.split.verify()` checks `split_manifest.json`
+against SHA `fd2b8c21…`. `snakemake -n cp2` resolves the DAG end-to-end.
+
+**Known non-blocking test flake.** `test_ridge_learns_and_records` asserts a synthetic
+`ridge Pearson-δ > 0.4` bound that numpy 2.4.6 (in-spec per the `numpy=2.*` pin) trips; the suite is
+otherwise **69/70 green** and **CP2's committed numbers are unaffected** (`results/benchmark_table.csv`
+is byte-identical since the CP2-final commit). Tracked as a follow-up (loosen the synthetic threshold or
+tighten the pin) — not a regression in any pipeline code.
+
 ## Supplementary analyses — the full arc
 
 Beyond the primary CP1/CP2 benchmark, a sequence of pre-registered supplementary analyses probe *why*
 the hard perturbations are hard. Each is committed with an honest one-line verdict and a pointer;
 every claim is **fraction-of-ceiling / partial-correlation, per axis** (raw Pearson-δ is
 baseline-dominated), and results are framed as attempts against a measured target, not solved problems.
+
+**Provenance trail (auditable):** every result carries a per-result git **tag** (`cp1`, `cp2`,
+`budget-final`, `phaseB-final`, `mechanism-spike-final`, `cnl-gate-final`, `cnl-realdata-final`,
+`trajectory-final`, `donor-final`, `relational-final`, `core-frozen`), a **pre-registration** in
+[`hypotheses.md`](hypotheses.md) (committed before the data was seen, with the go/no-go thresholds), and
+a committed **gate CSV** under `results/` (or `mechanism/results/`). The six negatives are reproducible
+look-ups, not recollections.
 
 | Analysis | One-line verdict | Pointer |
 |---|---|---|
@@ -176,6 +206,7 @@ baseline-dominated), and results are framed as attempts against a measured targe
 | **Mechanism line** | Â_C (spikes #1/#2) **FAIL** under P≪G; C-NL third-moment gate **positive** on the simulator; C-NL real-data **NEGATIVE** (third moment orthogonal, 12/12 strata) | [`mechanism/`](mechanism/), [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md) |
 | **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](TRAJECTORY.md) |
 | **Donor-structured recovery** | **NO-GO** — within-donor same-gene concordance is real but at noise-floor magnitude (Δ≈0.017); donor-*averaging* beats donor-*conditioning* (0.034 vs 0.016); the floor is real, reversal refuted on the dataset's own 2-guide design | [`DONOR.md`](DONOR.md) |
+| **Relational-object recovery** | **FAIL** — relational structure is floored too: no specific-space object (similarity/loadings/rank) reaches 0.30 (S 0.008, best loading factor 0.17, high-effect subset 0.037). Raw-space S ≈ 0.9 is a *constant-cosine artifact*, not a reproducible pattern (repo measures 0.007). The floor is object-general | [`RELATIONAL.md`](RELATIONAL.md) |
 
 **Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
 bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from
@@ -254,6 +285,24 @@ noise-floor magnitude. **G-D.2:** donor-conditioned recovery (0.016) is beaten b
 (0.034) and even wrong-donor (0.024) — donor-conditioning gives *negative* gain. The "0.48" was a
 noise-*model* estimate, not empirical; the 16× gap **inverts** (averaging helps). The floor is real;
 the reversal is refuted. No build (G13 unlicensed). Full readout: [`DONOR.md`](DONOR.md).
+
+### Relational-object recovery (sixth clean negative)
+
+The five negatives above all scored the *pointwise* per-perturbation delta δ_p (cross-donor
+reproducibility ~0.03). This tested a **different object** — the *relational* structure over
+perturbations (perturbation×perturbation similarity **S**, program loadings **L**, per-gene rank
+**R**), which averages over many genes so per-cell noise averages out. Run in **specific**
+(shared-program-removed) space, because raw similarity is dominated by the shared activation program
+(pre-registered C-REL.1/C-REL.2 in [`hypotheses.md`](hypotheses.md)). **G-R.1 fails:** no specific-space
+object reaches the 0.30 bar — S = **0.008**, L top-3 = **0.11** (best factor 0.17, above its 0.019 null
+but ≪ 0.30), R = **0.025**; restricting to the top-200 high-effect perturbations lifts S only to
+**0.037**, so the floor is *total*, not population-dilution. The machinery is calibrated (it reproduces
+the committed 0.049 pointwise floor and detects the loading whisker). **Honest correction:** raw-space
+S reproducibility is **0.007**, not the ~0.9 a shared-program tautology would suggest — that ~0.9 is
+the constant high *baseline* of raw cosines (all perturbations point toward the shared program), not a
+reproducible *pattern*. G-R.2 (known-regulator recovery) was gated on a pass and not run; the build
+(G14) is unlicensed. The frontier's noise floor is **object-general** — pointwise *and* relational, raw
+*and* specific, whole-population *and* high-effect. Full readout: [`RELATIONAL.md`](RELATIONAL.md).
 
 ## License
 
