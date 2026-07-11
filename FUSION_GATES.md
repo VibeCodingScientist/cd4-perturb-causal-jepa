@@ -16,8 +16,32 @@ CP2 (`benchmark_table.csv`) are byte-untouched; nothing is merged to `main`.*
   does **not** transfer to external causal structure. **A decisive, well-powered negative — the 7th on the
   frontier.**
 
+## Data-integrity gate — C2 positive control on the restored data: **PASS**
+The box `DATA_ROOT` had been clobbered by synthetic fixtures during earlier freeze-verification; pseudobulk
++ ESM2 were then restored. "Aligned to the HVG panel" is only a **shape** check — it does not prove the
+values are the real measured data rather than schema-matched fixtures. So before trusting any G-F.2 number,
+we reproduced a **known answer**: the committed within-distribution C2 (causal − non-causal Pearson-δ,
+top-50 DEGs), re-trained full on the **same restored `DATA_ROOT` the G-F.2 run used**
+(`scripts/c2_control.py` — isolated; writes only `results/c2_control.csv`, never `runs/`/`benchmark_table.csv`).
+
+| split | causal | non-causal | **C2 (reproduced)** | C2 (committed) | Δ |
+|---|---|---|---|---|---|
+| condition | 0.339 | 0.232 | **+0.106** | +0.118 | 0.012 |
+| gene | 0.365 | 0.209 | **+0.156** | +0.162 | 0.006 |
+
+Both reproduce within ±0.012 of the committed values (well inside the ±0.06 retraining/GPU-nondeterminism
+band). **The restored data reproduces the known answer → it is the real measured data, not a fixture → the
+G-F.2 numbers are trustworthy and the seventh negative stands.** (Had C2 not reproduced, the external
+result would have been suspended as a data-integrity casualty, not claimed.) Data-reality is a property of
+the data, so the full-train reproduction validates the G-F.2 run, which used this same restored pseudobulk
+(minus 10 negligible perts) + this same ESM2.
+
 ## Source-of-truth corrections (repo/paper win over the brief)
 - The brief's **"emdann 2024"** is actually **Weinstock et al. 2024, Cell Genomics** (LLCB). Corrected.
+  **First author pinned from the paper: Joshua S. Weinstock** (verified against PMC11605694, DOI
+  10.1016/j.xgen.2024.100671, "Gene regulatory network inference from CRISPR perturbations in primary CD4+
+  T cells…"). The LLCB code handle is `weinstockj` (github.com/weinstockj/LLCB); **"emdann" (Emma Dann) is a
+  different researcher and not an author here** — do not cite it. **Citation of record: Weinstock 2024.**
 - The brief's **"211 edges over 84 TFs" is [VERIFIED] correct** — 350/211/151 at |β|≥0.020/0.025/0.030,
   matching the paper exactly (`data/external/PROVENANCE.md`).
 - **Both external papers are Marson/Pritchard-consortium** — same lab as our GSE278572. So this is
