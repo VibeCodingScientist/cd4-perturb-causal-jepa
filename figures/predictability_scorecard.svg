@@ -1,0 +1,94 @@
+<svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <rect x="0" y="0" width="1000" height="760" fill="#ffffff"/>
+  <!-- Header -->
+  <text x="40" y="46" font-size="26" font-weight="700" fill="#12151a">Marson CD4 Perturb-seq — Predictability Scorecard</text>
+  <text x="40" y="72" font-size="14.5" fill="#4a515b">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling. An evaluation/methods reframe of validated content — no new model.</text>
+  <rect x="40" y="84" width="255" height="22" rx="4" fill="#eef1f5" stroke="#c9d0da"/>
+  <text x="49" y="99.5" font-size="12.5" fill="#3b424c">Novelty tier: <tspan font-weight="700">Tier-2</tspan> — a predictability characterization</text>
+  <text x="960" y="99.5" font-size="12" fill="#8a8f98" text-anchor="end">reproduced from committed gate CSVs · n=1 dataset (case study)</text>
+
+  <!-- Panel A: fraction of ceiling (gene hold-out) -->
+  <text x="40" y="146" font-size="16" font-weight="700" fill="#12151a">A · Fraction of the measured reliability ceiling recovered — gene hold-out</text>
+  <text x="40" y="166" font-size="12.5" fill="#6b7280">Where linear collapses (Ridge 0.02) the do-operator reaches 0.56. The causal−twin gap is the C2 positive.</text>
+  <!-- axis -->
+  <g font-size="12" fill="#8a8f98">
+    <line x1="300" y1="186" x2="300" y2="404" stroke="#d5dae1"/>
+    <line x1="900" y1="186" x2="900" y2="404" stroke="#c9d0da" stroke-dasharray="4 3"/>
+    <text x="300" y="420" text-anchor="middle">0</text>
+    <text x="600" y="420" text-anchor="middle">0.5</text>
+    <text x="900" y="420" text-anchor="middle">1.0 = ceiling</text>
+  </g>
+  <!-- bars: x0=300, scale 600px = 1.0 -->
+  <g font-size="13">
+    <!-- Ridge (linear) 0.017 -->
+    <text x="290" y="203" text-anchor="end" fill="#3b424c">Ridge (linear)</text>
+    <rect x="300" y="192" width="10.2" height="16" rx="2" fill="#b04a4a"/>
+    <text x="318" y="205" fill="#b04a4a" font-weight="700">0.02 — collapses</text>
+    <!-- FCN 0.107 -->
+    <text x="290" y="231" text-anchor="end" fill="#3b424c">FCN (nonlinear)</text>
+    <rect x="300" y="220" width="64.2" height="16" rx="2" fill="#9aa1ab"/>
+    <text x="372" y="233" fill="#6b7280">0.11</text>
+    <!-- noncausal twin 0.301 -->
+    <text x="290" y="259" text-anchor="end" fill="#3b424c">Non-causal twin</text>
+    <rect x="300" y="248" width="180.6" height="16" rx="2" fill="#7e94c4"/>
+    <text x="488" y="261" fill="#6b7280">0.30</text>
+    <!-- jepa_only 0.387 -->
+    <text x="290" y="287" text-anchor="end" fill="#3b424c">JEPA-only</text>
+    <rect x="300" y="276" width="232.2" height="16" rx="2" fill="#9aa1ab"/>
+    <text x="540" y="289" fill="#6b7280">0.39</text>
+    <!-- jepa_causal 0.552 -->
+    <text x="290" y="315" text-anchor="end" fill="#3b424c">JEPA + causal</text>
+    <rect x="300" y="304" width="331.2" height="16" rx="2" fill="#3f9e6b"/>
+    <text x="639" y="317" fill="#2e8b57">0.55</text>
+    <!-- causal do-operator 0.555 -->
+    <text x="290" y="343" text-anchor="end" fill="#12151a" font-weight="700">Do-operator (causal)</text>
+    <rect x="300" y="332" width="333.0" height="16" rx="2" fill="#2e8b57"/>
+    <text x="641" y="345" fill="#2e8b57" font-weight="700">0.56</text>
+  </g>
+  <!-- C2 gap annotation -->
+  <line x1="480.6" y1="256" x2="633" y2="340" stroke="#2e8b57" stroke-width="0" />
+  <path d="M 484 372 L 484 366 L 633 366 L 633 372" fill="none" stroke="#2e8b57" stroke-width="1.3"/>
+  <text x="558" y="390" text-anchor="middle" font-size="12.5" fill="#2e8b57" font-weight="700">C2 do-operator effect = causal − twin (+0.162 gene, Pearson-δ)</text>
+
+  <!-- Panel B: probe scorecard -->
+  <text x="40" y="470" font-size="16" font-weight="700" fill="#12151a">B · Seven probes — where the recoverable signal is (each vs its own degree/label-preserving null)</text>
+  <g font-size="13">
+    <!-- helper: chip at x=770 -->
+    <!-- P1 -->
+    <text x="40" y="502" fill="#12151a" font-weight="600">P1 · Causal-matrix (Â_C)</text>
+    <text x="250" y="502" fill="#5a616b">Â AUROC 0.62 &lt; correlation null 0.83 · mechanism not recovered under P≪G</text>
+    <rect x="852" y="490" width="108" height="19" rx="9.5" fill="#f2dede"/><text x="906" y="503.5" text-anchor="middle" fill="#b04a4a" font-weight="700">FAIL</text>
+    <!-- P2 -->
+    <text x="40" y="528" fill="#12151a" font-weight="600">P2 · Fluctuation (3rd-moment)</text>
+    <text x="250" y="528" fill="#5a616b">ΔR²≈2.8e-6 beyond covariance · 0/24 strata significant</text>
+    <rect x="852" y="516" width="108" height="19" rx="9.5" fill="#eceef1"/><text x="906" y="529.5" text-anchor="middle" fill="#6b7280" font-weight="700">NEGATIVE</text>
+    <!-- P3 -->
+    <text x="40" y="554" fill="#12151a" font-weight="600">P3 · Single-cell SNR</text>
+    <text x="250" y="554" fill="#5a616b">x-donor 0.033 · 16% of cytokine genes SNR&gt;3 · single-cell won't lift it</text>
+    <rect x="852" y="542" width="108" height="19" rx="9.5" fill="#eceef1"/><text x="906" y="555.5" text-anchor="middle" fill="#6b7280" font-weight="700">FLOOR</text>
+    <!-- P4 -->
+    <text x="40" y="580" fill="#12151a" font-weight="600">P4 · Trajectory-geometry</text>
+    <text x="250" y="580" fill="#5a616b">partial ρ 0.007/0.034 (p=0.75/0.55) · not a geometry artifact</text>
+    <rect x="852" y="568" width="108" height="19" rx="9.5" fill="#eceef1"/><text x="906" y="581.5" text-anchor="middle" fill="#6b7280" font-weight="700">NEGATIVE</text>
+    <!-- P5 -->
+    <text x="40" y="606" fill="#12151a" font-weight="600">P5 · Donor-structure</text>
+    <text x="250" y="606" fill="#5a616b">conditioning 0.016 &lt; averaging 0.034 · concordance real but floor-magnitude</text>
+    <rect x="852" y="594" width="108" height="19" rx="9.5" fill="#eceef1"/><text x="906" y="607.5" text-anchor="middle" fill="#6b7280" font-weight="700">NO-GO</text>
+    <!-- P6 -->
+    <text x="40" y="632" fill="#12151a" font-weight="600">P6 · Relational-object</text>
+    <text x="250" y="632" fill="#5a616b">best specific object 0.11 &lt; 0.30 · floor is object-general</text>
+    <rect x="852" y="620" width="108" height="19" rx="9.5" fill="#f2dede"/><text x="906" y="633.5" text-anchor="middle" fill="#b04a4a" font-weight="700">FAIL</text>
+    <!-- P7 -->
+    <text x="40" y="658" fill="#12151a" font-weight="600">P7 · External causal-edge</text>
+    <text x="250" y="658" fill="#5a616b">causal 0.559 &gt; null 0.500 but = twin 0.569 (Δ−0.010) · above null, not causal</text>
+    <rect x="852" y="646" width="108" height="19" rx="9.5" fill="#faedd6"/><text x="906" y="659.5" text-anchor="middle" fill="#b6791f" font-weight="700">IN-DIST</text>
+    <!-- C2 anchor -->
+    <line x1="40" y1="676" x2="960" y2="676" stroke="#e2e6ea"/>
+    <text x="40" y="700" fill="#12151a" font-weight="700">C2 · Do-operator control</text>
+    <text x="250" y="700" fill="#2e8b57" font-weight="600">+0.118 condition / +0.162 gene vs the non-causal twin — the one positive</text>
+    <rect x="852" y="688" width="108" height="19" rx="9.5" fill="#dcefe4"/><text x="906" y="701.5" text-anchor="middle" fill="#2e8b57" font-weight="700">POSITIVE</text>
+  </g>
+  <!-- takeaway -->
+  <text x="40" y="736" font-size="13.5" fill="#3b424c">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests: six probes sit at the floor, the one accuracy</text>
+  <text x="40" y="753" font-size="13.5" fill="#3b424c">positive (C2) is <tspan font-weight="700">in-distribution, not causal</tspan>. The C2 anchor proves the nulls mean “no signal,” not “no sensitivity.”</text>
+</svg>
