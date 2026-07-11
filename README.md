@@ -31,7 +31,10 @@ committed **before** any model saw data.
   per-perturbation prediction floor (~**0.03** cross-donor) can be broken — causal-matrix, fluctuation,
   single-cell SNR, trajectory-geometry, donor-structure, relational structure. **All six are clean
   negatives**, each traceable to a committed gate CSV, **zero GPU spent**. The floor is real and
-  object-general. → [**Supplementary analyses — the full arc**](#supplementary-analyses--the-full-arc).
+  object-general. A **seventh, GPU-gated** external-validation test (C-FUSE 1b) then closed the causal
+  question — the do-operator's within-dataset C2 advantage does **not** replicate on held-out external
+  causal edges (recovered above null, but no better than its non-causal twin), so the edge is
+  **in-distribution, not causal** (data-integrity C2 control passed). → [**Supplementary analyses — the full arc**](#supplementary-analyses--the-full-arc).
 
 ---
 
@@ -193,10 +196,10 @@ baseline-dominated), and results are framed as attempts against a measured targe
 
 **Provenance trail (auditable):** every result carries a per-result git **tag** (`cp1`, `cp2`,
 `budget-final`, `phaseB-final`, `mechanism-spike-final`, `cnl-gate-final`, `cnl-realdata-final`,
-`trajectory-final`, `donor-final`, `relational-final`, `core-frozen`), a **pre-registration** in
-[`hypotheses.md`](hypotheses.md) (committed before the data was seen, with the go/no-go thresholds), and
-a committed **gate CSV** under `results/` (or `mechanism/results/`). The six negatives are reproducible
-look-ups, not recollections.
+`trajectory-final`, `donor-final`, `relational-final`, `core-frozen`, `fusion-gf2-final`), a
+**pre-registration** in [`hypotheses.md`](hypotheses.md) (committed before the data was seen, with the
+go/no-go thresholds), and a committed **gate CSV** under `results/` (or `mechanism/results/`). The seven
+negatives are reproducible look-ups, not recollections.
 
 | Analysis | One-line verdict | Pointer |
 |---|---|---|
@@ -207,6 +210,7 @@ look-ups, not recollections.
 | **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](TRAJECTORY.md) |
 | **Donor-structured recovery** | **NO-GO** — within-donor same-gene concordance is real but at noise-floor magnitude (Δ≈0.017); donor-*averaging* beats donor-*conditioning* (0.034 vs 0.016); the floor is real, reversal refuted on the dataset's own 2-guide design | [`DONOR.md`](DONOR.md) |
 | **Relational-object recovery** | **FAIL** — relational structure is floored too: no specific-space object (similarity/loadings/rank) reaches 0.30 (S 0.008, best loading factor 0.17, high-effect subset 0.037). Raw-space S ≈ 0.9 is a *constant-cosine artifact*, not a reproducible pattern (repo measures 0.007). The floor is object-general | [`RELATIONAL.md`](RELATIONAL.md) |
+| **External causal-edge validation (C-FUSE 1b, GPU)** | **FAIL (causal-specificity)** — the do-operator recovers held-out external edge *direction* above null (9/9 regulators >0.5, binom p=0.004) but with **no** advantage over its non-causal twin (causal−twin **−0.010**, regulator cluster-bootstrap CI [−0.013, −0.005]); the within-dataset C2 edge is **in-distribution, not causal**. Signal rides Freimer *indirect* KO-DE edges; the 45 *direct* Weinstock (LLCB) edges sit at chance (0.400, p=0.94). Data-integrity **C2 positive control passed** (restored data verified real: +0.106/+0.156 vs committed +0.118/+0.162) | [`FUSION_GATES.md`](FUSION_GATES.md) |
 
 **Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
 bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from

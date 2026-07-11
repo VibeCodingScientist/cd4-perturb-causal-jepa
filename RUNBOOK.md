@@ -92,3 +92,12 @@ each) — subsample per §7e; submit `jepa` / `jepa_finetune` to the same queue.
   HVG): use `np.argsort` + `np.add.reduceat` on a `float32` array. `np.add.at` (unbuffered, slow)
   and `pd.DataFrame(s).groupby(...).mean()` (4 GB copy) both stalled/OOM'd G-D.2. Science was
   unaffected — G-D.1 reproduced identically across three runs.
+- **Scratch / verification runs must NEVER write to `CD4_DATA_ROOT`.** During C-FUSE 1b, freeze-verification
+  test runs wrote **synthetic fixtures over the real pseudobulk + ESM2** in `DATA_ROOT`; only the immutable
+  raw CZI surviving (+ the committed freeze) made it recoverable. Point test suites / fixtures at an
+  **isolated scratch `DATA_ROOT`**, never the shared one.
+- **A C2 positive control is MANDATORY after any restore/regeneration of `DATA_ROOT`** before trusting a
+  result computed on it. "Aligned to the HVG panel" is only a *shape* check — it does not prove the values
+  are real. Re-train full and reproduce the committed within-distribution C2
+  (`scripts/c2_control.py` → condition **+0.118** / gene **+0.162**, band ±0.06); only on a PASS is a
+  result on regenerated data trustworthy. C-FUSE 1b reproduced +0.106 / +0.156 → PASS.
