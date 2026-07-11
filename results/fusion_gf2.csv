@@ -1,0 +1,4 @@
+subset,edges,regulators,causal_acc,twin_acc,causal_minus_twin,null_mean,null_sd,p_causal_vs_null,p_twin_vs_null,raw_causal_acc,verdict
+weinstock(direct),45,8,0.4,0.5333,-0.1333,0.5018,0.0741,0.9374531273436328,0.3906304684765762,0.6,FAIL
+freimer(DE),6122,9,0.5603,0.5693,-0.009,0.4998,0.0064,4.999750012499375e-05,4.999750012499375e-05,0.5603,FAIL
+combined,6167,10,0.5591,0.569,-0.0099,0.4998,0.0064,4.999750012499375e-05,4.999750012499375e-05,0.5606,FAIL
