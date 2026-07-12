@@ -58,9 +58,35 @@
       // takeaway
       root.appendChild(h("div", "data-note",
         "<span data-icon='check'></span><div><b>The takeaway.</b> " + esc(A.summary) + "</div>"));
+
+      // subordinate second-dataset port appendix (only if folded on main)
+      if (A.schmidt) root.appendChild(buildSchmidt(A.schmidt));
     },
     update: function () { /* split-agnostic */ }
   });
+
+  function buildSchmidt(s) {
+    var card = h("div", "card appendix"); card.style.marginTop = "22px";
+    var ports = (s.ports || []).map(function (p) {
+      return "<tr><td><b>" + esc(p.code) + "</b> " + esc(p.label) + "</td>" +
+        "<td class='num'>" + App.fmt.num(p.nostim, ".3f") + "</td>" +
+        "<td class='num'>" + App.fmt.num(p.stim, ".3f") + "</td>" +
+        "<td class='muted'>" + esc(p.vs_null) + "</td></tr>";
+    }).join("");
+    var bounds = (s.bounds || []).map(function (b, i) {
+      return "<li" + (i === 0 ? " class='bound-decisive'" : "") + ">" + esc(b) + "</li>";
+    }).join("");
+    card.innerHTML =
+      "<div class='appendix__tag'>Appendix · second-dataset port</div>" +
+      "<div class='card__title'>" + App.icon("layers") + "<span>Does the audit <em>machinery</em> port? — " + esc(s.dataset.split(" —")[0]) + "</span>" +
+      "<span class='tag tag--good' style='margin-left:auto'>" + esc(s.verdict) + "</span></div>" +
+      "<p class='card__sub'>" + esc(s.dataset) + ". The <b>headline finding is unchanged</b> — this asks only whether the identical audit machinery runs on a second dataset. Three model-free probes, recomputed on Schmidt's <em>own</em> floor (no do-operator retrain), each clearing Schmidt's own degree/label-preserving null:</p>" +
+      "<table class='table'><thead><tr><th>Probe (Schmidt's own floor)</th><th class='num'>nostim</th><th class='num'>stim</th><th>vs Schmidt's null</th></tr></thead><tbody>" + ports + "</tbody></table>" +
+      "<div class='data-note' style='margin-top:14px'>" + App.icon("check", 16) + "<div><b>Earned.</b> " + esc(s.earned) + "</div></div>" +
+      "<div class='appendix__bounds'><div class='appendix__bounds-h'>" + App.icon("alert-triangle", 15) + " Four load-bearing bounds (verbatim)</div><ol>" + bounds + "</ol></div>" +
+      "<div class='data-note data-note--qual' style='margin-top:12px'>" + App.icon("info", 16) + "<div><b>Not earned.</b> " + esc(s.not_earned) + " <b>Next step:</b> " + esc(s.next_step) + "</div></div>";
+    return card;
+  }
 
   function buildProbe(p) {
     var card = document.createElement("button");

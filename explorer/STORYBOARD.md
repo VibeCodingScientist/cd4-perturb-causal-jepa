@@ -33,6 +33,10 @@ committed v2 CSV. The spine is the audit; the negatives are the story — told s
 > no advantage over its twin — in-distribution, not causal. And the one accuracy positive, C2,
 > is the anchor that makes every null credible. The residual isn't noise — it's the transient
 > activation-cytokine program. Mapped seven ways, zero GPU."
+- *(Optional, scroll to the subordinate appendix)* The audit **machinery** ports to a second
+  dataset (Schmidt 2022) — R1/R2/R3 reproduce above its own null, no retrain — but keep it
+  subordinate and read **BOUND 1 aloud**: cross-well ≠ cross-donor, so the *floor finding* was
+  not re-tested. Headline unchanged.
 
 **2:30–3:00 · the takeaway**
 > "This is the first reliability-ceiling-calibrated, positive-control-anchored predictability

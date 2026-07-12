@@ -88,6 +88,7 @@ def export_manifest():
         {"panel": "Act 3 · scorecard", "csv": "results/fusion_gf2.csv", "shows": "P7 external causal-edge detail (Weinstock/Freimer)"},
         {"panel": "Act 3 · scorecard", "csv": "results/phaseB_top_residual_genes.csv", "shows": "residual identity — activation-cytokine program"},
         {"panel": "Act 3 · scorecard", "csv": "figures/predictability_scorecard.svg", "shows": "the hero scorecard figure (embedded)"},
+        {"panel": "Act 3 · Schmidt appendix", "csv": "results/gpa2_scorecard.csv", "shows": "second-dataset port (machinery ports; four bounds verbatim from GPA2_PORT.md)"},
     ]
     return {
         "_meta": meta("Dataset facts + novelty tier + CSV→panel provenance map."),
@@ -270,6 +271,8 @@ def export_act3():
     svg = (FIG / "predictability_scorecard.svg").read_text()
     rec("scorecard svg bytes", len(svg))
 
+    schmidt = export_schmidt()
+
     return {
         "_meta": meta("Seven-probe scorecard from predictability_audit_gate.csv (all verdicts reproduce the committed CSVs; G-PA.1 PASS)."),
         "scorecard_svg": svg,
@@ -281,7 +284,54 @@ def export_act3():
         "positive_control_argument": "The same degree/label-preserving null machinery that flags six probes as at-the-floor and one (P7) as in-distribution still registers the do-operator C2 as a clear positive. So a null cell means \"no recoverable signal here,\" not \"no sensitivity\" — which is what turns a pile of negatives into a calibrated predictability map rather than a blunt-instrument failure.",
         "finding": "Under honest measurement — every probe scored against its own null and read relative to the measured reliability ceiling — the recoverable signal is far narrower than the raw genome-scale volume suggests. Six probes sit at the noise floor; the one accuracy positive (C2) is in-distribution, not causal (P7). Mapped seven ways, with zero GPU wasted.",
         "summary": "A reliability-ceiling-calibrated, positive-control-anchored predictability audit of a Perturb-seq dataset — a diagnostic that tells you what is recoverable before you burn GPU. A methods/evaluation contribution on the axis the field asked for, reported conservatively as Tier-2 (n=1 case study; see the novelty note), not a claim to have solved perturbation prediction.",
+        "schmidt": schmidt,
     }
+
+
+# --------------------------------------------------------------------------- #
+# Second-dataset port (G-PA.2, PR #13 folded into main). Subordinate appendix:
+# the audit MACHINERY ports to Schmidt 2022; the floor FINDING is not re-tested.
+# The four BOUNDs are quoted VERBATIM from GPA2_PORT.md (the committed record).
+def export_schmidt():
+    p = RES / "gpa2_scorecard.csv"
+    if not p.exists():
+        print("schmidt: gpa2_scorecard.csv not on main -> omitted."); return None
+    g = pd.read_csv(p)
+    row = {r.condition: r for r in g.itertuples()}
+    ns, st = row.get("nostim"), row.get("stim")
+    ports = [
+        {"code": "R1", "label": "per-perturbation reproducibility (cross-well)",
+         "nostim": r(ns.repro_floor_cross_well), "stim": r(st.repro_floor_cross_well),
+         "vs_null": "null ≈ 0, p ≤ 1/501"},
+        {"code": "R2", "label": "reliability ceiling (split-half over cells, Spearman-Brown)",
+         "nostim": r(ns.reliability_ceiling_SB), "stim": r(st.reliability_ceiling_SB), "vs_null": "—"},
+        {"code": "R3", "label": "relational-object S (target×target, cross-well split)",
+         "nostim": r(ns.relational_S), "stim": r(st.relational_S),
+         "vs_null": "null " + App_num(ns.relational_null) + " / " + App_num(st.relational_null) + ", p ≤ 1/501"},
+    ]
+    rec("schmidt R1 nostim/stim", (ports[0]["nostim"], ports[0]["stim"]))
+    return {
+        "dataset": "Schmidt et al. 2022 (Science; GEO GSE190604) — primary human T cells, 2 donors, CRISPRa Perturb-seq (73 screen-hit perturbations)",
+        "verdict": "audit machinery ports (qualified)",
+        "headline_unchanged": True,
+        "ports": ports,
+        "earned": "the predictability-audit machinery ports to a second, same-consortium primary-cell CRISPRa Perturb-seq dataset — a coherent, null-discriminating scorecard, 3 model-free probes on the dataset's own recomputed floor, with no do-operator retrain.",
+        "not_earned": "floor-finding generalization (the cross-donor floor was untested — no donor labels in the public form), independent-lab validation (same lab), or a full 7-probe instrument. A machinery-portability demonstration, not proof the narrow-recoverable-signal finding holds on a second dataset.",
+        # VERBATIM from GPA2_PORT.md "The honest read" — the four load-bearing bounds
+        "bounds": [
+            "BOUND 1 — the decisive caveat: R1 is cross-WELL (technical replicate), not cross-DONOR (biological). Marson's 0.03 floor was cross-donor. Schmidt's public form has no donor demux, so the cross-donor floor could not be ported. The Marson floor finding was not tested on Schmidt; 0.71 vs 0.03 is a different-axis non-comparison.",
+            "BOUND 2 — high by construction: 73 selected strong screen-hits + on-target CRISPRa activation ⇒ high cross-well reproducibility is expected; not the hard test (recovering a floor in a genome-scale mix) that gave the Marson audit its value.",
+            "BOUND 3 — not independent: same lab (Marson), CRISPRa vs our CRISPRi.",
+            "BOUND 4 — 3 of 7 probes: P4/P5 N/A from the public form; P1/P2/P7 deferred.",
+        ],
+        "next_step": "The real generalization test — re-computing the cross-donor floor finding itself on a second dataset — needs a donor-demuxed second dataset. That is the next step, not a claim made here.",
+        "source": "results/gpa2_scorecard.csv · GPA2_PORT.md",
+    }
+
+
+def App_num(x):
+    v = r(x, 2)
+    return "—" if v is None else ("%.2f" % v)
 
 
 def write(name, obj):

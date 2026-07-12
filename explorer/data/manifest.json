@@ -1,7 +1,7 @@
 {
   "_meta": {
     "source": "real",
-    "generated_utc": "2026-07-12T16:47:35+00:00",
+    "generated_utc": "2026-07-12T17:39:27+00:00",
     "notes": "Dataset facts + novelty tier + CSV\u2192panel provenance map."
   },
   "title": "The Predictability Audit",
@@ -92,6 +92,11 @@
       "panel": "Act 3 \u00b7 scorecard",
       "csv": "figures/predictability_scorecard.svg",
       "shows": "the hero scorecard figure (embedded)"
+    },
+    {
+      "panel": "Act 3 \u00b7 Schmidt appendix",
+      "csv": "results/gpa2_scorecard.csv",
+      "shows": "second-dataset port (machinery ports; four bounds verbatim from GPA2_PORT.md)"
     }
   ],
   "any_real": true

@@ -31,7 +31,7 @@ That's it — no `npm install`, no build, no API keys.
 |---|---|---|
 | **1** | The anchor | **C2** — the do-operator beats its non-causal twin (+0.118 condition / +0.162 gene). It is the audit's **signal-detection positive control**: the null machinery *can* detect signal, so the nulls that follow mean "no signal," not "blunt instrument." Includes the data-integrity control (restored data reproduces C2 within tolerance). |
 | **2** | The reframe | Raw Pearson-δ is uninterpretable alone; re-read as **fraction-of-ceiling** the axes dissociate — condition linear-dominated, gene structure-dominated (bucket **C ≈ 0.76**, real at p<0.001). Raw δ is shown *beside* fraction-of-ceiling. |
-| **3** | The scorecard | The hero: the committed `predictability_scorecard.svg`, then **seven pre-registered probes** (six at the floor, P7 in-distribution) + the **C2 positive-control anchor**, each with its verdict + key number from its gate CSV, the residual's identity (activation-cytokine program), and the honest **Tier-2** novelty frame. Zero GPU. |
+| **3** | The scorecard | The hero: the committed `predictability_scorecard.svg`, then **seven pre-registered probes** (six at the floor, P7 in-distribution) + the **C2 positive-control anchor**, each with its verdict + key number from its gate CSV, the residual's identity (activation-cytokine program), the honest **Tier-2** novelty frame, and a subordinate **second-dataset port appendix** (Schmidt 2022 — machinery ports, four bounds verbatim). Zero GPU. |
 
 Use the **Eval axis** toggle (condition / gene hold-out) — Acts 1–2 respond to it; Act 3 is
 axis-agnostic. The **Next act ›** button walks the arc.
@@ -59,6 +59,7 @@ It prints a verification table of every headline number and writes `data/*.json`
 | Act 3 · P7 external causal-edge | `results/fusion_gf2.csv` |
 | Act 3 · residual identity | `results/phaseB_top_residual_genes.csv` |
 | Act 3 · hero figure | `figures/predictability_scorecard.svg` (embedded verbatim) |
+| Act 3 · Schmidt port appendix | `results/gpa2_scorecard.csv` + four bounds verbatim from `GPA2_PORT.md` |
 
 The map is also embedded in `data/manifest.json` (`provenance`). The seven-probe scorecard
 resolves to the underlying gate CSVs via `predictability_audit_gate.csv`'s `source` column
@@ -66,8 +67,11 @@ resolves to the underlying gate CSVs via `predictability_audit_gate.csv`'s `sour
 `trajectory_coupling_gate.csv`, `donor_structure_gate.csv`, `relational_gate.csv`,
 `fusion_gf2.csv`).
 
-**Schmidt second-dataset appendix (G-PA.2):** not folded into `main` (PR #13 pending), so the
-explorer omits it — no unmerged claim is previewed.
+**Schmidt second-dataset appendix (G-PA.2):** PR #13 is folded into `main`, so Act 3 includes a
+**clearly-subordinate** port element — the audit *machinery* ports to Schmidt 2022 (R1 cross-well,
+R2 ceiling, R3 relational reproduce above Schmidt's own null, no retrain), with the four bounds
+stated **verbatim** from `GPA2_PORT.md` (decisively: cross-well ≠ cross-donor — the floor *finding*
+was not re-tested; same lab; CRISPRa vs CRISPRi; 3/7 probes). The v2 **headline is unchanged**.
 
 ## Files
 
