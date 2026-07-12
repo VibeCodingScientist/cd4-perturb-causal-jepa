@@ -50,6 +50,18 @@ paywalled full text cannot be fully excluded. The conservative rule sends this t
 reading is arguable — CIPHER's participation ratio is a complexity/dimensionality construct, not an
 irreducible-noise ceiling — but we do not overclaim on incomplete reads.)*
 
+**Weak vs strong occupation — the pivot for the promote call: WEAK.** Verified against CIPHER's full text
+(Kuznets-Speck et al.; bioRxiv 2025.06.27.661814 / Research Square 10.21203/rs.3.rs-7304871, PMC12363937),
+**CIPHER does *not* define a model-agnostic predictability ceiling.** Its one cross-dataset result —
+*verbatim:* "datasets with relatively high participation ratios correspondingly exhibited lower R2 values
+(correlation R2 = 0.75; slope = −6.5)" — is a property of **its own linear method's** performance, not an
+irreducible noise floor that bounds any model. scPerturBench (10.1038/s41592-025-02980-0) ranks 27 models
+with **no** per-dataset ceiling and factors in only because its full text is paywalled. **No existing
+single-cell predictability-*ceiling* method was found.** So this is weak occupation: a reliability-ceiling-
+calibrated, positive-control-anchored, **seven-orthogonal-probe** scorecard is a clear step beyond a single
+structural↔performance correlation — the contribution is **real at Tier-2** (Tier-1 is defensible), just not
+safely labeled "first."
+
 > Note: **CIPHER is the fluctuation/response-theory paper that probe P2 tested.** CIPHER predicts from the
 > *covariance* (2nd moment); our P2 asked whether the *third* moment adds anything beyond covariance on real
 > data → **negative** (0/24 strata). So this audit is adjacent to and consistent with CIPHER, not a competitor.
@@ -65,7 +77,9 @@ not change any answer. (Anti-triviality: no cell is reproducible by a trivially 
 reference — P1 is scored against a correlation null, P7 against its non-causal twin, the rest against
 degree/label-preserving permutation nulls.)
 
-### The Marson scorecard (`results/predictability_audit_gate.csv`, figure `figures/predictability_scorecard.svg`)
+### The Marson scorecard (`results/predictability_audit_gate.csv`)
+
+![Marson CD4 Perturb-seq predictability scorecard](figures/predictability_scorecard.svg)
 
 | Probe | Question | Verified reading | Verdict |
 |---|---|---|---|
