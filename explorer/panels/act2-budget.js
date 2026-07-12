@@ -9,13 +9,13 @@
   function h(tag, cls, html) { var e = App.el(tag, cls); if (html != null) e.innerHTML = html; return e; }
 
   App.registerPanel("act2", {
-    title: "The predictability budget",
+    title: "The reframe",
     render: function (root) {
       A = d();
       root.appendChild(h("div", "panel__head",
-        "<div class='panel__eyebrow'>Act 2 · what's actually learnable</div>" +
-        "<h1 class='panel__title'>The predictability budget</h1>" +
-        "<p class='panel__lede'>The task is <b>not</b> noise-saturated. Each perturbation's response splits into <b>A</b> linear-explainable, <b>C</b> structured-but-unmodelled, and <b>B</b> irreducible noise — on the metric's own scale. The two axes reach very different fractions of what's achievable by completely different mechanisms — exactly what raw Pearson-δ hides.</p>"));
+        "<div class='panel__eyebrow'>Act 2 · the reframe</div>" +
+        "<h1 class='panel__title'>Raw δ is uninterpretable — calibrate to the reliability ceiling</h1>" +
+        "<p class='panel__lede'>A raw Pearson-δ score means nothing without knowing how much signal was reliably <em>there</em> to recover. So every score is read relative to the measured reliability ceiling, per axis. The response then splits into <b>A</b> linear-explainable, <b>C</b> structured-but-unmodelled, and <b>B</b> irreducible noise — and the two axes reach very different fractions of what's achievable, by completely different mechanisms, exactly what raw δ hides.</p>"));
 
       if (!A.budget) { root.appendChild(h("div", "card", "<p class='muted'>Act 2 data unavailable.</p>")); return; }
 
@@ -73,7 +73,7 @@
   function buildFrac(s) {
     var rows = (A.frac_of_ceiling && A.frac_of_ceiling[s]) || [];
     var html = "<div class='card__title'>" + App.icon("bar-chart") + "<span>Raw δ, beside fraction-of-ceiling</span></div>" +
-      "<p class='card__sub'>Same models, two columns: raw Pearson-δ (what the leaderboard shows) and the fraction of each axis's <em>achievable</em> ceiling it captures. The dissociation is the point.</p>" +
+      "<p class='card__sub'>Same models, two columns: the median per-perturbation raw Pearson (uncalibrated) and the fraction of each axis's <em>achievable</em> ceiling it captures. The dissociation between the two is the point.</p>" +
       "<table class='table'><thead><tr><th>Model</th><th class='num'>raw δ</th><th class='num'>fraction of ceiling</th></tr></thead><tbody>";
     rows.forEach(function (r) {
       var mark = (r.model === "ridge" || r.model === "causal") ? " style='background:var(--accent-wash)'" : "";

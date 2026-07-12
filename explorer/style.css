@@ -392,3 +392,20 @@ input[type="range"]::-moz-range-progress { height: 8px; background: var(--accent
 .prov code { background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 11.5px; }
 
 @media (max-width: 880px) { .gate-grid { grid-template-columns: 1fr; } .stat-hero__num { font-size: 46px; } }
+
+/* =========================================================================
+   v2 — PREDICTABILITY AUDIT (scorecard) additions
+   ========================================================================= */
+/* committed hero SVG: white figure panel, responsive */
+.scorecard-figure { background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px; overflow-x: auto; }
+.scorecard-figure svg { display: block; width: 100%; height: auto; min-width: 640px; }
+
+/* the C2 positive-control probe reads green, not maroon */
+.gate--anchor { border-color: var(--accent); }
+.gate--anchor:hover, .gate--anchor.is-open { border-color: var(--accent-2); }
+.gate__n--pos { background: var(--accent-wash); color: var(--accent-2); }
+.gate__q { font-style: italic; color: var(--ink-2); margin-bottom: 6px; }
+
+/* c2 control (data-integrity) mini-panel */
+.control-check { display: flex; align-items: center; gap: 10px; background: var(--accent-wash); border: 1px solid #B6DEDA; border-radius: var(--radius-sm); padding: 10px 14px; color: var(--accent-2); font-size: 13px; }
+.control-check b { font-weight: 700; }

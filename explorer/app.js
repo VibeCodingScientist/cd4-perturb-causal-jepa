@@ -139,9 +139,9 @@
   /* ---- panel registry + router ------------------------------------------- */
   var PANELS = {}; var PANEL_ORDER = ["act1", "act2", "act3"];
   var PANEL_META = {
-    act1: { num: 1, icon: "zap", label: "The do-operator works" },
-    act2: { num: 2, icon: "layers", label: "The predictability budget" },
-    act3: { num: 3, icon: "target", label: "The frontier, six ways" }
+    act1: { num: 1, icon: "zap", label: "The anchor" },
+    act2: { num: 2, icon: "sliders", label: "The reframe" },
+    act3: { num: 3, icon: "bar-chart", label: "The scorecard" }
   };
   App.registerPanel = function (id, def) { PANELS[id] = def; def.__rendered = false; };
   function renderPanel(id) {
@@ -196,7 +196,7 @@
     });
     grp.appendChild(seg); c.appendChild(grp);
     var hint = el("span", "muted"); hint.style.fontSize = "12px"; hint.style.maxWidth = "30ch"; hint.style.lineHeight = "1.35";
-    hint.textContent = "Acts 1–2 respond to the axis; Act 3 (the frontier) is axis-agnostic.";
+    hint.textContent = "Acts 1–2 respond to the axis; Act 3 (the scorecard) is axis-agnostic.";
     c.appendChild(hint);
 
     c.appendChild(el("span", "spacer"));

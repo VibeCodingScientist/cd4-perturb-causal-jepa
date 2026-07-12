@@ -1,233 +1,204 @@
 {
   "_meta": {
     "source": "real",
-    "generated_utc": "2026-07-10T09:04:40+00:00",
-    "notes": "Floor + residual identity from phaseB; six gate verdicts with numbers pulled from each gate CSV."
+    "generated_utc": "2026-07-12T16:47:35+00:00",
+    "notes": "Seven-probe scorecard from predictability_audit_gate.csv (all verdicts reproduce the committed CSVs; G-PA.1 PASS)."
   },
-  "floor": {
-    "value": 0.033,
-    "label": "cross-donor per-perturbation specific signal (top-50 DEG)",
-    "triangulation": "the same ~0.03 floor recurs in the budget cross-donor test, the SNR pre-check, the trajectory scalar, the donor \u0394, and the relational objects."
-  },
+  "scorecard_svg": "<svg viewBox=\"0 0 1000 760\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif\">\n  <rect x=\"0\" y=\"0\" width=\"1000\" height=\"760\" fill=\"#ffffff\"/>\n  <!-- Header -->\n  <text x=\"40\" y=\"46\" font-size=\"26\" font-weight=\"700\" fill=\"#12151a\">Marson CD4 Perturb-seq \u2014 Predictability Scorecard</text>\n  <text x=\"40\" y=\"72\" font-size=\"14.5\" fill=\"#4a515b\">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling. An evaluation/methods reframe of validated content \u2014 no new model.</text>\n  <rect x=\"40\" y=\"84\" width=\"255\" height=\"22\" rx=\"4\" fill=\"#eef1f5\" stroke=\"#c9d0da\"/>\n  <text x=\"49\" y=\"99.5\" font-size=\"12.5\" fill=\"#3b424c\">Novelty tier: <tspan font-weight=\"700\">Tier-2</tspan> \u2014 a predictability characterization</text>\n  <text x=\"960\" y=\"99.5\" font-size=\"12\" fill=\"#8a8f98\" text-anchor=\"end\">reproduced from committed gate CSVs \u00b7 n=1 dataset (case study)</text>\n\n  <!-- Panel A: fraction of ceiling (gene hold-out) -->\n  <text x=\"40\" y=\"146\" font-size=\"16\" font-weight=\"700\" fill=\"#12151a\">A \u00b7 Fraction of the measured reliability ceiling recovered \u2014 gene hold-out</text>\n  <text x=\"40\" y=\"166\" font-size=\"12.5\" fill=\"#6b7280\">Where linear collapses (Ridge 0.02) the do-operator reaches 0.56. The causal\u2212twin gap is the C2 positive.</text>\n  <!-- axis -->\n  <g font-size=\"12\" fill=\"#8a8f98\">\n    <line x1=\"300\" y1=\"186\" x2=\"300\" y2=\"404\" stroke=\"#d5dae1\"/>\n    <line x1=\"900\" y1=\"186\" x2=\"900\" y2=\"404\" stroke=\"#c9d0da\" stroke-dasharray=\"4 3\"/>\n    <text x=\"300\" y=\"420\" text-anchor=\"middle\">0</text>\n    <text x=\"600\" y=\"420\" text-anchor=\"middle\">0.5</text>\n    <text x=\"900\" y=\"420\" text-anchor=\"middle\">1.0 = ceiling</text>\n  </g>\n  <!-- bars: x0=300, scale 600px = 1.0 -->\n  <g font-size=\"13\">\n    <!-- Ridge (linear) 0.017 -->\n    <text x=\"290\" y=\"203\" text-anchor=\"end\" fill=\"#3b424c\">Ridge (linear)</text>\n    <rect x=\"300\" y=\"192\" width=\"10.2\" height=\"16\" rx=\"2\" fill=\"#b04a4a\"/>\n    <text x=\"318\" y=\"205\" fill=\"#b04a4a\" font-weight=\"700\">0.02 \u2014 collapses</text>\n    <!-- FCN 0.107 -->\n    <text x=\"290\" y=\"231\" text-anchor=\"end\" fill=\"#3b424c\">FCN (nonlinear)</text>\n    <rect x=\"300\" y=\"220\" width=\"64.2\" height=\"16\" rx=\"2\" fill=\"#9aa1ab\"/>\n    <text x=\"372\" y=\"233\" fill=\"#6b7280\">0.11</text>\n    <!-- noncausal twin 0.301 -->\n    <text x=\"290\" y=\"259\" text-anchor=\"end\" fill=\"#3b424c\">Non-causal twin</text>\n    <rect x=\"300\" y=\"248\" width=\"180.6\" height=\"16\" rx=\"2\" fill=\"#7e94c4\"/>\n    <text x=\"488\" y=\"261\" fill=\"#6b7280\">0.30</text>\n    <!-- jepa_only 0.387 -->\n    <text x=\"290\" y=\"287\" text-anchor=\"end\" fill=\"#3b424c\">JEPA-only</text>\n    <rect x=\"300\" y=\"276\" width=\"232.2\" height=\"16\" rx=\"2\" fill=\"#9aa1ab\"/>\n    <text x=\"540\" y=\"289\" fill=\"#6b7280\">0.39</text>\n    <!-- jepa_causal 0.552 -->\n    <text x=\"290\" y=\"315\" text-anchor=\"end\" fill=\"#3b424c\">JEPA + causal</text>\n    <rect x=\"300\" y=\"304\" width=\"331.2\" height=\"16\" rx=\"2\" fill=\"#3f9e6b\"/>\n    <text x=\"639\" y=\"317\" fill=\"#2e8b57\">0.55</text>\n    <!-- causal do-operator 0.555 -->\n    <text x=\"290\" y=\"343\" text-anchor=\"end\" fill=\"#12151a\" font-weight=\"700\">Do-operator (causal)</text>\n    <rect x=\"300\" y=\"332\" width=\"333.0\" height=\"16\" rx=\"2\" fill=\"#2e8b57\"/>\n    <text x=\"641\" y=\"345\" fill=\"#2e8b57\" font-weight=\"700\">0.56</text>\n  </g>\n  <!-- C2 gap annotation -->\n  <line x1=\"480.6\" y1=\"256\" x2=\"633\" y2=\"340\" stroke=\"#2e8b57\" stroke-width=\"0\" />\n  <path d=\"M 484 372 L 484 366 L 633 366 L 633 372\" fill=\"none\" stroke=\"#2e8b57\" stroke-width=\"1.3\"/>\n  <text x=\"558\" y=\"390\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"#2e8b57\" font-weight=\"700\">C2 do-operator effect = causal \u2212 twin (+0.162 gene, Pearson-\u03b4)</text>\n\n  <!-- Panel B: probe scorecard -->\n  <text x=\"40\" y=\"470\" font-size=\"16\" font-weight=\"700\" fill=\"#12151a\">B \u00b7 Seven probes \u2014 where the recoverable signal is (each vs its own degree/label-preserving null)</text>\n  <g font-size=\"13\">\n    <!-- helper: chip at x=770 -->\n    <!-- P1 -->\n    <text x=\"40\" y=\"502\" fill=\"#12151a\" font-weight=\"600\">P1 \u00b7 Causal-matrix (\u00c2_C)</text>\n    <text x=\"250\" y=\"502\" fill=\"#5a616b\">\u00c2 AUROC 0.62 &lt; correlation null 0.83 \u00b7 mechanism not recovered under P\u226aG</text>\n    <rect x=\"852\" y=\"490\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#f2dede\"/><text x=\"906\" y=\"503.5\" text-anchor=\"middle\" fill=\"#b04a4a\" font-weight=\"700\">FAIL</text>\n    <!-- P2 -->\n    <text x=\"40\" y=\"528\" fill=\"#12151a\" font-weight=\"600\">P2 \u00b7 Fluctuation (3rd-moment)</text>\n    <text x=\"250\" y=\"528\" fill=\"#5a616b\">\u0394R\u00b2\u22482.8e-6 beyond covariance \u00b7 0/24 strata significant</text>\n    <rect x=\"852\" y=\"516\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"529.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NEGATIVE</text>\n    <!-- P3 -->\n    <text x=\"40\" y=\"554\" fill=\"#12151a\" font-weight=\"600\">P3 \u00b7 Single-cell SNR</text>\n    <text x=\"250\" y=\"554\" fill=\"#5a616b\">x-donor 0.033 \u00b7 16% of cytokine genes SNR&gt;3 \u00b7 single-cell won't lift it</text>\n    <rect x=\"852\" y=\"542\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"555.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">FLOOR</text>\n    <!-- P4 -->\n    <text x=\"40\" y=\"580\" fill=\"#12151a\" font-weight=\"600\">P4 \u00b7 Trajectory-geometry</text>\n    <text x=\"250\" y=\"580\" fill=\"#5a616b\">partial \u03c1 0.007/0.034 (p=0.75/0.55) \u00b7 not a geometry artifact</text>\n    <rect x=\"852\" y=\"568\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"581.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NEGATIVE</text>\n    <!-- P5 -->\n    <text x=\"40\" y=\"606\" fill=\"#12151a\" font-weight=\"600\">P5 \u00b7 Donor-structure</text>\n    <text x=\"250\" y=\"606\" fill=\"#5a616b\">conditioning 0.016 &lt; averaging 0.034 \u00b7 concordance real but floor-magnitude</text>\n    <rect x=\"852\" y=\"594\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"607.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NO-GO</text>\n    <!-- P6 -->\n    <text x=\"40\" y=\"632\" fill=\"#12151a\" font-weight=\"600\">P6 \u00b7 Relational-object</text>\n    <text x=\"250\" y=\"632\" fill=\"#5a616b\">best specific object 0.11 &lt; 0.30 \u00b7 floor is object-general</text>\n    <rect x=\"852\" y=\"620\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#f2dede\"/><text x=\"906\" y=\"633.5\" text-anchor=\"middle\" fill=\"#b04a4a\" font-weight=\"700\">FAIL</text>\n    <!-- P7 -->\n    <text x=\"40\" y=\"658\" fill=\"#12151a\" font-weight=\"600\">P7 \u00b7 External causal-edge</text>\n    <text x=\"250\" y=\"658\" fill=\"#5a616b\">causal 0.559 &gt; null 0.500 but = twin 0.569 (\u0394\u22120.010) \u00b7 above null, not causal</text>\n    <rect x=\"852\" y=\"646\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#faedd6\"/><text x=\"906\" y=\"659.5\" text-anchor=\"middle\" fill=\"#b6791f\" font-weight=\"700\">IN-DIST</text>\n    <!-- C2 anchor -->\n    <line x1=\"40\" y1=\"676\" x2=\"960\" y2=\"676\" stroke=\"#e2e6ea\"/>\n    <text x=\"40\" y=\"700\" fill=\"#12151a\" font-weight=\"700\">C2 \u00b7 Do-operator control</text>\n    <text x=\"250\" y=\"700\" fill=\"#2e8b57\" font-weight=\"600\">+0.118 condition / +0.162 gene vs the non-causal twin \u2014 the one positive</text>\n    <rect x=\"852\" y=\"688\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#dcefe4\"/><text x=\"906\" y=\"701.5\" text-anchor=\"middle\" fill=\"#2e8b57\" font-weight=\"700\">POSITIVE</text>\n  </g>\n  <!-- takeaway -->\n  <text x=\"40\" y=\"736\" font-size=\"13.5\" fill=\"#3b424c\">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests: six probes sit at the floor, the one accuracy</text>\n  <text x=\"40\" y=\"753\" font-size=\"13.5\" fill=\"#3b424c\">positive (C2) is <tspan font-weight=\"700\">in-distribution, not causal</tspan>. The C2 anchor proves the nulls mean \u201cno signal,\u201d not \u201cno sensitivity.\u201d</text>\n</svg>\n",
+  "probes": [
+    {
+      "code": "P1",
+      "name": "causal-matrix (\u00c2_C)",
+      "family": "mechanism",
+      "family_tags": [
+        "mechanistic"
+      ],
+      "verdict": "FAIL",
+      "question": "Does an explicit per-context causal matrix beat a correlation null under P\u226aG?",
+      "key": "\u00c2 AUROC 0.62 vs correlation-null 0.83",
+      "detail": "mechanism recovery not established under P\u226aG (oracle true-col = 1.00).",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "mechanism/results/c4_auroc.csv"
+    },
+    {
+      "code": "P2",
+      "name": "fluctuation (3rd-moment C-NL)",
+      "family": "mechanism",
+      "family_tags": [
+        "mechanistic"
+      ],
+      "verdict": "NEGATIVE",
+      "question": "Does the response 3rd moment predict what covariance cannot, on real data?",
+      "key": "\u0394R\u00b2 \u2248 2.8e-6 beyond covariance",
+      "detail": "0/24 strata significant \u2014 positive on the simulator, dead on real data.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "mechanism/results/cnl_realdata_gate.csv"
+    },
+    {
+      "code": "P3",
+      "name": "single-cell SNR",
+      "family": "reliability",
+      "family_tags": [
+        "pointwise"
+      ],
+      "verdict": "FLOOR",
+      "question": "Would single-cell resolution lift the per-perturbation floor above pseudobulk?",
+      "key": "cross-donor floor 0.033",
+      "detail": "only 16% of cytokine genes reach SNR>3; single-cell depth would not lift it (gate RED).",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/phaseB_snr_precheck_summary.csv"
+    },
+    {
+      "code": "P4",
+      "name": "trajectory-geometry",
+      "family": "geometry",
+      "family_tags": [
+        "geometric"
+      ],
+      "verdict": "NEGATIVE",
+      "question": "Is per-perturbation recoverability explained by activation-trajectory geometry?",
+      "key": "partial \u03c1 0.007 / 0.034",
+      "detail": "p = 0.75 / 0.55 (bar |\u03c1|\u22650.3); recoverability is not a trajectory-geometry artifact.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/trajectory_coupling_gate.csv"
+    },
+    {
+      "code": "P5",
+      "name": "donor-structure",
+      "family": "structure",
+      "family_tags": [
+        "structural"
+      ],
+      "verdict": "NO-GO",
+      "question": "Does donor-CONDITIONING beat donor-AVERAGING for perturbation recovery?",
+      "key": "conditioning 0.016 < averaging 0.034",
+      "detail": "same-gene concordance is real but floor-magnitude; conditioning gives no gain.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/donor_structure_gate.csv"
+    },
+    {
+      "code": "P6",
+      "name": "relational-object",
+      "family": "structure",
+      "family_tags": [
+        "structural"
+      ],
+      "verdict": "FAIL",
+      "question": "Does any specific-space relational object (similarity/loadings/rank) reach 0.30?",
+      "key": "best specific object 0.111 < 0.30 bar",
+      "detail": "no relational object clears the bar (S-similarity 0.008); the high raw-space cosine is a constant-offset artifact, not reproducible structure.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/relational_gate.csv"
+    },
+    {
+      "code": "P7",
+      "name": "external causal-edge validation",
+      "family": "external",
+      "family_tags": [
+        "external-causal"
+      ],
+      "verdict": "IN-DIST",
+      "question": "Do held-out external causal edges reveal a CAUSAL (not just predictive) advantage?",
+      "key": "causal 0.559 vs twin 0.569 (null 0.500)",
+      "detail": "recovers external edge direction above null, but with no causal-specific advantage over the twin (\u0394 \u22120.010) \u2014 in-distribution, not causal.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/fusion_gf2.csv"
+    },
+    {
+      "code": "Budget",
+      "name": "Budget (ceiling + floor)",
+      "family": "calibration",
+      "family_tags": [
+        "calibration"
+      ],
+      "verdict": "FLOOR",
+      "question": "How much signal is recoverable at all, and where does linear collapse?",
+      "key": "floor 0.032 / 0.049 \u00b7 Ridge 0.02 vs do-op 0.56 of ceiling",
+      "detail": "the floor is real (perm p<0.001) but the recoverable pointwise volume is small.",
+      "consistent": true,
+      "is_anchor": false,
+      "source": "results/budget_cross_donor.csv"
+    },
+    {
+      "code": "C2",
+      "name": "do-operator control",
+      "family": "positive-control",
+      "family_tags": [
+        "positive control"
+      ],
+      "verdict": "POSITIVE",
+      "question": "Does the SAME null machinery that flags the six negatives ever register a positive?",
+      "key": "+0.118 condition / +0.162 gene vs twin",
+      "detail": "the same null machinery that flags the negatives registers this as a clear positive \u2014 the nulls mean 'no signal', not 'no sensitivity'.",
+      "consistent": true,
+      "is_anchor": true,
+      "source": "results/benchmark_table.csv"
+    }
+  ],
+  "n_probes": 7,
+  "all_consistent": true,
   "residual": {
     "program": "transient T-cell activation-cytokine program",
     "peaks": "Rest \u2192 Stim8hr transition (4/4 donors)",
     "top_genes": [
       {
         "symbol": "TMSB4X",
-        "annotation": "cytoskeletal (highly expressed)",
-        "mass_frac": 0.0149
+        "annotation": "cytoskeletal (highly expressed)"
       },
       {
         "symbol": "IFNG",
-        "annotation": "effector cytokine (Th1)",
-        "mass_frac": 0.0149
+        "annotation": "effector cytokine (Th1)"
       },
       {
         "symbol": "CCL4",
-        "annotation": "chemokine",
-        "mass_frac": 0.0147
+        "annotation": "chemokine"
       },
       {
         "symbol": "LTB",
-        "annotation": "lymphotoxin beta (TNF family)",
-        "mass_frac": 0.0143
+        "annotation": "lymphotoxin beta (TNF family)"
       },
       {
         "symbol": "IL3",
-        "annotation": "cytokine (chr5q31 cluster)",
-        "mass_frac": 0.0123
+        "annotation": "cytokine (chr5q31 cluster)"
       },
       {
         "symbol": "CCL3",
-        "annotation": "chemokine",
-        "mass_frac": 0.0088
+        "annotation": "chemokine"
       },
       {
         "symbol": "TRBC1",
-        "annotation": "TCR beta constant",
-        "mass_frac": 0.0074
+        "annotation": "TCR beta constant"
       },
       {
         "symbol": "PFN1",
-        "annotation": "profilin (cytoskeletal)",
-        "mass_frac": 0.0069
+        "annotation": "profilin (cytoskeletal)"
       },
       {
         "symbol": "CSF2",
-        "annotation": "GM-CSF cytokine (chr5q31 cluster)",
-        "mass_frac": 0.0068
+        "annotation": "GM-CSF cytokine (chr5q31 cluster)"
       },
       {
         "symbol": "CXCL8",
-        "annotation": "chemokine (IL8)",
-        "mass_frac": 0.0065
+        "annotation": "chemokine (IL8)"
       },
       {
         "symbol": "IL2RA",
-        "annotation": "IL2 receptor alpha (activation marker)",
-        "mass_frac": 0.0058
+        "annotation": "IL2 receptor alpha (activation marker)"
       },
       {
         "symbol": "S100A4",
-        "annotation": "calcium-binding",
-        "mass_frac": 0.0057
+        "annotation": "calcium-binding"
       }
     ]
   },
-  "gates": [
-    {
-      "id": "causal_matrix",
-      "n": 1,
-      "name": "Causal-matrix (\u00c2_C)",
-      "family": [
-        "pointwise",
-        "specific"
-      ],
-      "verdict": "FAIL",
-      "headline": "Explicit per-context causal matrix does not beat correlation under P\u226aG.",
-      "key_number": {
-        "label": "mechanism AUROC vs corr-null",
-        "value": "0.62 vs 0.83",
-        "detail": "gap -0.20 (95% CI -0.30\u2026-0.10, excludes 0)"
-      },
-      "numbers": {
-        "mechanism_auroc": 0.624,
-        "corr_null_auroc": 0.828,
-        "true_col_auroc": 1.0,
-        "gap": -0.203,
-        "gap_lo": -0.296,
-        "gap_hi": -0.101
-      },
-      "aside": "Standalone positive: the linear transportability condition itself degrades (oracle AUROC 1.00 \u2192 0.88) as the system becomes nonlinear.",
-      "csv": "mechanism/results/c4_auroc.csv"
-    },
-    {
-      "id": "fluctuation",
-      "n": 2,
-      "name": "Fluctuation (third moment)",
-      "family": [
-        "pointwise",
-        "raw"
-      ],
-      "verdict": "NEGATIVE",
-      "headline": "On real data the baseline third moment is orthogonal to the residual \u2014 the simulator signal does not survive.",
-      "key_number": {
-        "label": "\u0394R\u00b2 across strata",
-        "value": "\u2248 0.000",
-        "detail": "mean 0.0000 over 24/24 strata (was +0.6\u20130.75 on the simulator)"
-      },
-      "numbers": {
-        "dR2_mean": 2e-05,
-        "dR2_absmax": 0.00012,
-        "n_strata": 24
-      },
-      "aside": "The covariance/Lyapunov sufficiency that makes correlation hard to beat is a second-moment property; the third moment was the one place signal could hide. It does not, on CD4 data.",
-      "csv": "mechanism/results/cnl_realdata_gate.csv"
-    },
-    {
-      "id": "single_cell",
-      "n": 3,
-      "name": "Single-cell resolution (CellCap SNR)",
-      "family": [
-        "pointwise",
-        "specific"
-      ],
-      "verdict": "NOT GREEN",
-      "headline": "Single-cell resolution would not recover the per-perturbation residual \u2014 a confirmed noise floor at pseudobulk depth.",
-      "key_number": {
-        "label": "fraction detectable at SNR\u22653",
-        "value": "17%",
-        "detail": "reaching a usable floor needs ~12\u00d7 more cells; green = 0"
-      },
-      "numbers": {
-        "xdonor_top50": 0.0335,
-        "frac_detectable_snr3": 0.174,
-        "cells_multiple": 12.4,
-        "green": 0
-      },
-      "aside": "Reached with zero GPU / zero egress \u2014 no 130 GB of single cells were pulled to prove a negative.",
-      "csv": "results/phaseB_snr_precheck_summary.csv"
-    },
-    {
-      "id": "trajectory",
-      "n": 4,
-      "name": "Trajectory-coupling",
-      "family": [
-        "relational",
-        "specific"
-      ],
-      "verdict": "CLEAN NEGATIVE",
-      "headline": "Recoverability is not a trajectory-geometry property \u2014 no dynamical model was fit or needed.",
-      "key_number": {
-        "label": "partial \u03c1 (R, trajectory-coupling)",
-        "value": "+0.007 / +0.034",
-        "detail": "condition / gene, p = 0.75 / 0.55 (bar |\u03c1|\u22650.3)"
-      },
-      "numbers": {
-        "condition": {
-          "partial_spearman": 0.007,
-          "perm_p": 0.754
-        },
-        "gene": {
-          "partial_spearman": 0.034,
-          "perm_p": 0.549
-        }
-      },
-      "aside": "The reduced scalar target itself sits at the noise floor (~0.07 vs random-axis null 0.03).",
-      "csv": "results/trajectory_coupling_gate.csv"
-    },
-    {
-      "id": "donor_structure",
-      "n": 5,
-      "name": "Donor-structured recovery",
-      "family": [
-        "relational",
-        "specific"
-      ],
-      "verdict": "NO-GO",
-      "headline": "Within-donor same-gene structure is real but at noise-floor magnitude, and donor-averaging beats donor-conditioning \u2014 the reversal is refuted.",
-      "key_number": {
-        "label": "same-gene within-donor \u0394",
-        "value": "0.012\u20130.018",
-        "detail": "4/4 donors, well below the \u0394\u22650.15 bar; conditioning 0.016 < averaging 0.034 (the gap inverts)"
-      },
-      "numbers": {
-        "within_donor_delta_lo": 0.012,
-        "within_donor_delta_hi": 0.018,
-        "within_donor_delta_median": 0.014,
-        "conditioning": 0.016,
-        "averaging": 0.034
-      },
-      "aside": "An earlier within-donor reproducibility figure that motivated this test was a noise-model estimate, not an empirical measurement \u2014 and the real gap inverts.",
-      "csv": "results/donor_structure_gate.csv"
-    },
-    {
-      "id": "relational",
-      "n": 6,
-      "name": "Relational (perturbation similarity)",
-      "family": [
-        "relational",
-        "raw"
-      ],
-      "verdict": "NEGATIVE",
-      "headline": "Cross-donor relational structure (which perturbations resemble which) is at the floor \u2014 all five relational objects fail.",
-      "key_number": {
-        "label": "cross-donor S-similarity (specific)",
-        "value": "0.008",
-        "detail": "the strong cross-donor similarity a response-theory simulator suggested does not appear \u2014 measured 0.008, at the floor. 5/5 objects fail."
-      },
-      "numbers": {
-        "S_similarity": 0.008,
-        "pointwise_floor": 0.049,
-        "L_loadings_top3": 0.111,
-        "R_pergene_rank": 0.025,
-        "S_top200_higheffect": 0.037,
-        "all_fail": true
-      },
-      "aside": "The last of the six, spanning to relational + raw structure \u2014 the floor holds even when you ask which perturbations look alike.",
-      "csv": "results/relational_gate.csv"
-    }
-  ],
-  "summary": "Six pre-registered negatives \u2014 causal-matrix, fluctuation, single-cell, trajectory, donor-structure, relational \u2014 converge on the same pointwise floor, spanning pointwise and relational, raw and specific. Zero GPU across all six. We bounded the frontier honestly; we did not solve perturbation prediction."
+  "positive_control_argument": "The same degree/label-preserving null machinery that flags six probes as at-the-floor and one (P7) as in-distribution still registers the do-operator C2 as a clear positive. So a null cell means \"no recoverable signal here,\" not \"no sensitivity\" \u2014 which is what turns a pile of negatives into a calibrated predictability map rather than a blunt-instrument failure.",
+  "finding": "Under honest measurement \u2014 every probe scored against its own null and read relative to the measured reliability ceiling \u2014 the recoverable signal is far narrower than the raw genome-scale volume suggests. Six probes sit at the noise floor; the one accuracy positive (C2) is in-distribution, not causal (P7). Mapped seven ways, with zero GPU wasted.",
+  "summary": "A reliability-ceiling-calibrated, positive-control-anchored predictability audit of a Perturb-seq dataset \u2014 a diagnostic that tells you what is recoverable before you burn GPU. A methods/evaluation contribution on the axis the field asked for, reported conservatively as Tier-2 (n=1 case study; see the novelty note), not a claim to have solved perturbation prediction."
 }

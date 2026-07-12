@@ -1,8 +1,8 @@
-# CD4+ Perturbation Explorer
+# The Predictability Audit — interactive explorer
 
-An interactive, three-act walkthrough of this repository's results — wired to the
-**committed result CSVs on `main`**. Every number on screen is read from a CSV; nothing
-is hand-typed or synthetic.
+An interactive, three-act walkthrough of the **v2 predictability audit** — wired to the
+**committed result CSVs on `main`**. Every number on screen is read from a CSV; nothing is
+hand-typed or synthetic.
 
 ## Launch it (one step, no build)
 
@@ -13,8 +13,9 @@ open explorer/explorer_bundle.html          # macOS
 # or just double-click explorer/explorer_bundle.html
 ```
 
-`explorer_bundle.html` inlines everything (JS, fonts, and all data) into a single file
-that runs from `file://` with no server and no network.
+`explorer_bundle.html` inlines everything (JS, fonts, the hero scorecard SVG, and all data)
+into a single file that runs from `file://` with no server and no network. It is also a
+release asset.
 
 **Or serve the folder** (identical content, if you prefer a dev server):
 
@@ -24,13 +25,13 @@ cd explorer && python3 -m http.server 8000   # then open http://localhost:8000/e
 
 That's it — no `npm install`, no build, no API keys.
 
-## What it shows (the three-act arc)
+## What it shows (the audit arc)
 
 | Act | Panel | The point |
 |---|---|---|
-| **1** | The do-operator works | **C2** — the causal do-mask beats its non-causal twin (+0.118 condition / +0.162 gene), and the edge concentrates on *reliable* perturbations. Intervention, not observation. |
-| **2** | The predictability budget | Raw Pearson-δ is baseline-dominated; re-read as **fraction-of-ceiling** the axes dissociate — condition is linear-dominated, gene is structure-dominated (bucket **C ≈ 0.76**, real at p<0.001). Raw δ is shown *beside* fraction-of-ceiling. |
-| **3** | The frontier, six ways | The ~0.03 pointwise floor, triangulated by **six pre-registered negatives** (each with its verdict + key number from its gate CSV), and the residual's biological identity — the transient activation-cytokine program. Zero GPU. |
+| **1** | The anchor | **C2** — the do-operator beats its non-causal twin (+0.118 condition / +0.162 gene). It is the audit's **signal-detection positive control**: the null machinery *can* detect signal, so the nulls that follow mean "no signal," not "blunt instrument." Includes the data-integrity control (restored data reproduces C2 within tolerance). |
+| **2** | The reframe | Raw Pearson-δ is uninterpretable alone; re-read as **fraction-of-ceiling** the axes dissociate — condition linear-dominated, gene structure-dominated (bucket **C ≈ 0.76**, real at p<0.001). Raw δ is shown *beside* fraction-of-ceiling. |
+| **3** | The scorecard | The hero: the committed `predictability_scorecard.svg`, then **seven pre-registered probes** (six at the floor, P7 in-distribution) + the **C2 positive-control anchor**, each with its verdict + key number from its gate CSV, the residual's identity (activation-cytokine program), and the honest **Tier-2** novelty frame. Zero GPU. |
 
 Use the **Eval axis** toggle (condition / gene hold-out) — Acts 1–2 respond to it; Act 3 is
 axis-agnostic. The **Next act ›** button walks the arc.
@@ -48,39 +49,46 @@ It prints a verification table of every headline number and writes `data/*.json`
 
 | Panel | CSV(s) |
 |---|---|
-| Act 1 · C2 + leaderboard | `results/benchmark_table.csv` |
+| Act 1 · C2 anchor + leaderboard | `results/benchmark_table.csv` |
+| Act 1 · data-integrity control | `results/c2_control.csv` |
 | Act 1 · localization | `results/do_operator_localization.csv` |
 | Act 2 · fraction-of-ceiling | `results/fraction_of_ceiling.csv` |
 | Act 2 · A/B/C budget | `results/budget_decomposition.csv` (B = 1−r_ceiling; A = Ridge-frac × r_ceiling; C = r_ceiling − A) |
 | Act 2 · bucket C is real | `results/budget_cross_donor.csv` |
+| Act 3 · the seven-probe scorecard | `results/predictability_audit_gate.csv` (canonical; each row self-checks against the committed verdict) |
+| Act 3 · P7 external causal-edge | `results/fusion_gf2.csv` |
 | Act 3 · residual identity | `results/phaseB_top_residual_genes.csv` |
-| Act 3 · floor + single-cell gate | `results/phaseB_snr_precheck_summary.csv` |
-| Act 3 · gate 1 causal-matrix | `mechanism/results/c4_auroc.csv` |
-| Act 3 · gate 2 fluctuation | `mechanism/results/cnl_realdata_gate.csv` |
-| Act 3 · gate 4 trajectory | `results/trajectory_coupling_gate.csv` |
-| Act 3 · gate 5 donor-structure | `results/donor_structure_gate.csv` |
-| Act 3 · gate 6 relational | `results/relational_gate.csv` |
+| Act 3 · hero figure | `figures/predictability_scorecard.svg` (embedded verbatim) |
 
-The map is also embedded in `data/manifest.json` (`provenance`).
+The map is also embedded in `data/manifest.json` (`provenance`). The seven-probe scorecard
+resolves to the underlying gate CSVs via `predictability_audit_gate.csv`'s `source` column
+(`c4_auroc.csv`, `cnl_realdata_gate.csv`, `phaseB_snr_precheck_summary.csv`,
+`trajectory_coupling_gate.csv`, `donor_structure_gate.csv`, `relational_gate.csv`,
+`fusion_gf2.csv`).
+
+**Schmidt second-dataset appendix (G-PA.2):** not folded into `main` (PR #13 pending), so the
+explorer omits it — no unmerged claim is previewed.
 
 ## Files
 
 ```
 explorer/
-  explorer.html          # entry (dev server)
-  explorer_bundle.html    # self-contained offline build (open this)
-  app.js                  # state + router + chart kit (vanilla JS, D3 the only dep)
-  style.css               # design tokens + components
-  panels/act1-dooperator.js  act2-budget.js  act3-frontier.js
-  export_app_json.py      # committed CSVs -> data/*.json  (source:"real")
-  build_single_file.py    # inline everything -> explorer_bundle.html
-  data/*.json             # committed, real, verified
-  assets/                 # vendored D3 + fonts (offline)
+  explorer.html           # entry (dev server)
+  explorer_bundle.html     # self-contained offline build (open this) — release asset
+  app.js                   # state + router + chart kit (vanilla JS, D3 the only dep)
+  style.css                # design tokens + components
+  panels/act1-dooperator.js  act2-budget.js  act3-scorecard.js
+  export_app_json.py       # committed v2 CSVs -> data/*.json  (source:"real")
+  build_single_file.py     # inline everything -> explorer_bundle.html
+  data/*.json              # committed, real, verified
+  assets/                  # vendored D3 + fonts (offline)
 ```
 
 ## A note on honesty
 
 The badge stays until **every** panel reads real committed values; it is gone here because
-they all do. The arc leads with the confirmed do-operator, reframes raw scores as
-fraction-of-ceiling, and makes the six-negative frontier map the centerpiece — *"we bounded
-this honestly, six ways,"* not *"we solved perturbation prediction."*
+they all do. The arc leads with the confirmed do-operator as the positive control, reframes
+raw scores against the reliability ceiling, and makes the seven-probe scorecard the
+centerpiece — *"we measured, honestly, how predictable this dataset is,"* not *"we solved
+perturbation prediction."* Reported as **Tier-2, n=1** (a case study), with the do-operator
+edge shown to be in-distribution (P7), not causal.

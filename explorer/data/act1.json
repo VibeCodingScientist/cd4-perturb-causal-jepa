@@ -1,8 +1,8 @@
 {
   "_meta": {
     "source": "real",
-    "generated_utc": "2026-07-10T09:04:40+00:00",
-    "notes": "C2 = causal \u2212 non-causal from benchmark_table.csv; localization from do_operator_localization.csv."
+    "generated_utc": "2026-07-12T16:47:35+00:00",
+    "notes": "C2 anchor + control; the do-operator is the signal-detection positive control."
   },
   "c2": {
     "condition": {
@@ -18,6 +18,18 @@
       "pct": 79
     }
   },
+  "control": {
+    "condition": {
+      "recomputed_c2": 0.106,
+      "committed_c2": 0.118,
+      "within_tol": true
+    },
+    "gene": {
+      "recomputed_c2": 0.156,
+      "committed_c2": 0.162,
+      "within_tol": true
+    }
+  },
   "zero_shot": {
     "causal_gene": 0.368,
     "ridge_gene": 0.019
@@ -29,8 +41,6 @@
         "label": "Ridge",
         "family": "baseline",
         "pearson_delta": 0.384,
-        "perturbench_rank": 0.365,
-        "des": 0.651,
         "mode_collapse": false
       },
       {
@@ -38,8 +48,6 @@
         "label": "Causal (do-mask)",
         "family": "ablation",
         "pearson_delta": 0.344,
-        "perturbench_rank": 0.457,
-        "des": 0.587,
         "mode_collapse": true
       },
       {
@@ -47,8 +55,6 @@
         "label": "JEPA + Causal",
         "family": "ablation",
         "pearson_delta": 0.34,
-        "perturbench_rank": 0.459,
-        "des": 0.588,
         "mode_collapse": true
       },
       {
@@ -56,8 +62,6 @@
         "label": "JEPA (no mask)",
         "family": "ablation",
         "pearson_delta": 0.239,
-        "perturbench_rank": 0.474,
-        "des": 0.582,
         "mode_collapse": true
       },
       {
@@ -65,8 +69,6 @@
         "label": "Transformer (no mask)",
         "family": "ablation",
         "pearson_delta": 0.226,
-        "perturbench_rank": 0.483,
-        "des": 0.579,
         "mode_collapse": true
       },
       {
@@ -74,8 +76,6 @@
         "label": "PseudoBulk-FCN",
         "family": "baseline",
         "pearson_delta": 0.086,
-        "perturbench_rank": 0.5,
-        "des": 0.535,
         "mode_collapse": true
       }
     ],
@@ -85,8 +85,6 @@
         "label": "Causal (do-mask)",
         "family": "ablation",
         "pearson_delta": 0.368,
-        "perturbench_rank": 0.44,
-        "des": 0.599,
         "mode_collapse": true
       },
       {
@@ -94,8 +92,6 @@
         "label": "JEPA + Causal",
         "family": "ablation",
         "pearson_delta": 0.361,
-        "perturbench_rank": 0.44,
-        "des": 0.6,
         "mode_collapse": true
       },
       {
@@ -103,8 +99,6 @@
         "label": "JEPA (no mask)",
         "family": "ablation",
         "pearson_delta": 0.248,
-        "perturbench_rank": 0.468,
-        "des": 0.585,
         "mode_collapse": true
       },
       {
@@ -112,8 +106,6 @@
         "label": "Transformer (no mask)",
         "family": "ablation",
         "pearson_delta": 0.206,
-        "perturbench_rank": 0.484,
-        "des": 0.59,
         "mode_collapse": true
       },
       {
@@ -121,8 +113,6 @@
         "label": "PseudoBulk-FCN",
         "family": "baseline",
         "pearson_delta": 0.107,
-        "perturbench_rank": 0.5,
-        "des": 0.554,
         "mode_collapse": true
       },
       {
@@ -130,33 +120,25 @@
         "label": "Ridge",
         "family": "baseline",
         "pearson_delta": 0.019,
-        "perturbench_rank": 0.501,
-        "des": 0.506,
         "mode_collapse": true
       }
     ]
   },
   "localization": {
     "condition": {
-      "c2_gap_median": 0.026,
-      "reliable": 0.015,
-      "unreliable": 0.034,
       "corr_gap_vs_reliability": 0.101,
-      "causal_minus_ridge": -0.069,
-      "n": 2184
+      "reliable": 0.015,
+      "unreliable": 0.034
     },
     "gene": {
-      "c2_gap_median": 0.041,
-      "reliable": 0.141,
-      "unreliable": 0.022,
       "corr_gap_vs_reliability": 0.292,
-      "causal_minus_ridge": 0.37,
-      "n": 315
+      "reliable": 0.141,
+      "unreliable": 0.022
     }
   },
   "caveats": [
     "On the pure condition shift a linear gene\u2192\u03b4 map (Ridge, 0.384) is still slightly ahead of the causal transformer (0.344) on raw Pearson-\u03b4.",
     "Only Ridge on the condition hold-out clears the mode-collapse bar (PerturBench rank < 0.4); the transformers sit just above the threshold (causal always sharper than its non-causal twin).",
-    "The JEPA cells of the 2\u00d72 (C3) and TabPFN are CP2 / license-gated \u2014 not claimed here."
+    "C2 is a within-distribution positive control \u2014 it establishes the instrument's sensitivity; whether the edge is causal is tested separately in probe P7."
   ]
 }

@@ -1,13 +1,14 @@
 {
   "_meta": {
     "source": "real",
-    "generated_utc": "2026-07-10T09:04:40+00:00",
-    "notes": "Dataset facts + CSV\u2192panel provenance map."
+    "generated_utc": "2026-07-12T16:47:35+00:00",
+    "notes": "Dataset facts + novelty tier + CSV\u2192panel provenance map."
   },
+  "title": "The Predictability Audit",
+  "subtitle": "A reliability-ceiling-calibrated predictability scorecard for the Marson CD4+ Perturb-seq dataset",
   "dataset": {
     "cells": 22000000,
     "genes": 18129,
-    "profiles": 278684,
     "conditions": [
       "Rest",
       "Stim8hr",
@@ -35,66 +36,62 @@
       "sub": "unseen silenced genes"
     }
   ],
+  "novelty": {
+    "tier": "Tier-2",
+    "occupation": "weak",
+    "claim": "a predictability characterization of the Marson CD4 dataset (case study, n=1)",
+    "note": "Intrinsic predictability is an established paradigm (ecology / time-series forecasting); we claim the instantiation for Perturb-seq, not the concept. CIPHER correlates a per-dataset structural quantity (participation ratio) with its own linear method's R\u00b2 (R\u00b2=0.75, slope \u22126.5) \u2014 that is a property of one method's performance, not a model-agnostic ceiling \u2014 so a bare \"first\" is not safely defensible. Reported honestly as Tier-2."
+  },
   "provenance": [
     {
-      "panel": "Act 1 \u00b7 do-operator",
+      "panel": "Act 1 \u00b7 anchor",
       "csv": "results/benchmark_table.csv",
-      "shows": "leaderboard + C2 (causal \u2212 non-causal)"
+      "shows": "C2 positive control + leaderboard"
     },
     {
-      "panel": "Act 1 \u00b7 do-operator",
+      "panel": "Act 1 \u00b7 anchor",
+      "csv": "results/c2_control.csv",
+      "shows": "restored data reproduces C2 within tolerance"
+    },
+    {
+      "panel": "Act 1 \u00b7 anchor",
       "csv": "results/do_operator_localization.csv",
-      "shows": "edge concentrates on reliable perturbations"
+      "shows": "the edge concentrates on reliable perturbations"
     },
     {
-      "panel": "Act 2 \u00b7 budget",
+      "panel": "Act 2 \u00b7 reframe",
       "csv": "results/fraction_of_ceiling.csv",
       "shows": "raw \u03b4 beside fraction-of-ceiling, per axis"
     },
     {
-      "panel": "Act 2 \u00b7 budget",
+      "panel": "Act 2 \u00b7 reframe",
       "csv": "results/budget_decomposition.csv",
-      "shows": "A linear / B noise / C structured partition"
+      "shows": "A linear / B noise / C structured budget"
     },
     {
-      "panel": "Act 2 \u00b7 budget",
+      "panel": "Act 2 \u00b7 reframe",
       "csv": "results/budget_cross_donor.csv",
-      "shows": "bucket C is real (cross-donor perm p<0.001)"
+      "shows": "the ~0.03 cross-donor floor is real (perm p<0.001)"
     },
     {
-      "panel": "Act 3 \u00b7 frontier",
+      "panel": "Act 3 \u00b7 scorecard",
+      "csv": "results/predictability_audit_gate.csv",
+      "shows": "the seven-probe scorecard (canonical)"
+    },
+    {
+      "panel": "Act 3 \u00b7 scorecard",
+      "csv": "results/fusion_gf2.csv",
+      "shows": "P7 external causal-edge detail (Weinstock/Freimer)"
+    },
+    {
+      "panel": "Act 3 \u00b7 scorecard",
       "csv": "results/phaseB_top_residual_genes.csv",
-      "shows": "residual identity = activation-cytokine program"
+      "shows": "residual identity \u2014 activation-cytokine program"
     },
     {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "results/phaseB_snr_precheck_summary.csv",
-      "shows": "single-cell (CellCap) SNR gate + the ~0.03 floor"
-    },
-    {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "mechanism/results/c4_auroc.csv",
-      "shows": "gate 1 \u2014 causal-matrix (\u00c2_C)"
-    },
-    {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "mechanism/results/cnl_realdata_gate.csv",
-      "shows": "gate 2 \u2014 fluctuation / third-moment"
-    },
-    {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "results/trajectory_coupling_gate.csv",
-      "shows": "gate 4 \u2014 trajectory-coupling"
-    },
-    {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "results/donor_structure_gate.csv",
-      "shows": "gate 5 \u2014 donor-structured recovery"
-    },
-    {
-      "panel": "Act 3 \u00b7 frontier",
-      "csv": "results/relational_gate.csv",
-      "shows": "gate 6 \u2014 relational"
+      "panel": "Act 3 \u00b7 scorecard",
+      "csv": "figures/predictability_scorecard.svg",
+      "shows": "the hero scorecard figure (embedded)"
     }
   ],
   "any_real": true

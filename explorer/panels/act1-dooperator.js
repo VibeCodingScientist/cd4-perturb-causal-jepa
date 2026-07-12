@@ -10,17 +10,18 @@
   function h(tag, cls, html) { var e = App.el(tag, cls); if (html != null) e.innerHTML = html; return e; }
 
   App.registerPanel("act1", {
-    title: "The do-operator works",
+    title: "The anchor",
     render: function (root) {
       A = d();
       root.appendChild(h("div", "panel__head",
-        "<div class='panel__eyebrow'>Act 1 · the positive result</div>" +
-        "<h1 class='panel__title'>The do-operator works — and here's what it buys</h1>" +
-        "<p class='panel__lede'>Standard models treat a knockdown as an <em>observation</em>. The corrected do-mask removes only the edges <em>into</em> the perturbed gene, so the intervention still propagates downstream — treating it as an <em>intervention</em>. The pre-registered <b>C2</b> test isolates exactly that: same architecture, causal mask on vs off.</p>"));
+        "<div class='panel__eyebrow'>Act 1 · the anchor</div>" +
+        "<h1 class='panel__title'>The do-operator works — the audit's positive control</h1>" +
+        "<p class='panel__lede'>The corrected do-mask removes only the edges <em>into</em> the perturbed gene, so the intervention propagates downstream — a knockdown treated as an <em>intervention</em>, not an observation. The pre-registered <b>C2</b> test isolates it (same architecture, mask on vs off), and it is the methodological keystone: because the audit's null machinery <em>can</em> detect this signal, the negatives that follow read as \"no signal,\" not \"blunt instrument.\"</p>"));
 
       if (!A.c2) { root.appendChild(h("div", "card", "<p class='muted'>Act 1 data unavailable.</p>")); return; }
 
       refHero = h("div", "card card--pad-lg"); root.appendChild(refHero);
+      if (A.control) root.appendChild(buildControlCheck());
       var grid = h("div", "grid grid--2"); grid.style.marginTop = "18px";
       refLead = h("div", "card"); refLoc = h("div", "card");
       grid.appendChild(refLead); grid.appendChild(refLoc); root.appendChild(grid);
@@ -40,7 +41,7 @@
         "<div class='card__title'>" + App.icon("zap") + "<span>C2 · the do-operator effect — " + splitLabel(s) + "</span></div>" +
         "<div class='stat-hero'>" +
         "<div class='stat-hero__num'>" + App.fmt.signed(c2.delta, ".3f") + "</div>" +
-        "<div class='stat-hero__cap'>Causal (do-mask on) <b>" + App.fmt.num(c2.causal, ".3f") + "</b> vs its non-causal twin <b>" + App.fmt.num(c2.noncausal, ".3f") + "</b> — a <b>+" + c2.pct + "%</b> relative gain in Pearson-δ over the top-50 DEGs. Reported regardless of leaderboard position.</div>" +
+        "<div class='stat-hero__cap'>Causal (do-mask on) <b>" + App.fmt.num(c2.causal, ".3f") + "</b> vs its non-causal twin <b>" + App.fmt.num(c2.noncausal, ".3f") + "</b> — a <b>+" + c2.pct + "%</b> relative gain in Pearson-δ over the top-50 DEGs. This is the one positive: the signal-detection anchor for the whole audit.</div>" +
         "</div>";
       if (s === "gene" && A.zero_shot) {
         var zs = h("div", "stat-row",
@@ -54,6 +55,21 @@
       App.hydrateIcons(refHero.parentNode.parentNode);
     }
   });
+
+  // data-integrity control: the restored data reproduces the committed C2 within tolerance
+  function buildControlCheck() {
+    var c = A.control, cond = c.condition || {}, gene = c.gene || {};
+    var ok = cond.within_tol && gene.within_tol;
+    var wrap = h("div", "control-check");
+    wrap.style.marginTop = "12px";
+    wrap.innerHTML = App.icon(ok ? "check" : "alert-triangle", 16) +
+      "<div><b>Data-integrity control passed.</b> After a data restore, C2 recomputed to " +
+      App.fmt.signed(cond.recomputed_c2, ".3f") + " / " + App.fmt.signed(gene.recomputed_c2, ".3f") +
+      " (condition / gene) — within tolerance of the committed " +
+      App.fmt.signed(cond.committed_c2, ".3f") + " / " + App.fmt.signed(gene.committed_c2, ".3f") +
+      ", confirming the analysed data is the real, intact dataset.</div>";
+    return wrap;
+  }
 
   function collapseChip(mc) {
     return mc

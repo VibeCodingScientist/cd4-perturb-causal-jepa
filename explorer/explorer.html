@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CD4+ Perturbation Explorer</title>
-  <meta name="description" content="Interactive explorer for predicting CRISPRi perturbation effects in primary human CD4+ T cells (GSE278572)." />
+  <title>The Predictability Audit — CD4+ Perturb-seq</title>
+  <meta name="description" content="A reliability-ceiling-calibrated predictability scorecard for the Marson CD4+ CRISPRi Perturb-seq dataset (GSE278572)." />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
@@ -12,9 +12,9 @@
     <header class="app__header">
       <div class="brand">
         <span class="brand__mark" aria-hidden="true" data-icon="dna"></span>
-        <span class="brand__name">CD4+ Perturbation Explorer</span>
+        <span class="brand__name">The Predictability Audit</span>
       </div>
-      <span class="brand__sub">CRISPRi Perturb-seq · GSE278572</span>
+      <span class="brand__sub">CD4+ CRISPRi Perturb-seq · GSE278572</span>
       <span class="header__spacer"></span>
       <span class="badge-real" id="badge-real" hidden>
         <span data-icon="check" aria-hidden="true"></span> real results
@@ -38,7 +38,7 @@
   <!-- panels (each self-registers into App) -->
   <script src="./panels/act1-dooperator.js"></script>
   <script src="./panels/act2-budget.js"></script>
-  <script src="./panels/act3-frontier.js"></script>
+  <script src="./panels/act3-scorecard.js"></script>
   <!-- boot -->
   <script>window.App && App.boot();</script>
 </body>

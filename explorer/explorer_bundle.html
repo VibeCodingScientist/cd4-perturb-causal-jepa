@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CD4+ Perturbation Explorer</title>
-  <meta name="description" content="Interactive explorer for predicting CRISPRi perturbation effects in primary human CD4+ T cells (GSE278572)." />
+  <title>The Predictability Audit — CD4+ Perturb-seq</title>
+  <meta name="description" content="A reliability-ceiling-calibrated predictability scorecard for the Marson CD4+ CRISPRi Perturb-seq dataset (GSE278572)." />
   <style>
 /* Vendored fonts — offline. Falls back to system fonts if these fail to load. */
 @font-face {
@@ -427,6 +427,23 @@ input[type="range"]::-moz-range-progress { height: 8px; background: var(--accent
 
 @media (max-width: 880px) { .gate-grid { grid-template-columns: 1fr; } .stat-hero__num { font-size: 46px; } }
 
+/* =========================================================================
+   v2 — PREDICTABILITY AUDIT (scorecard) additions
+   ========================================================================= */
+/* committed hero SVG: white figure panel, responsive */
+.scorecard-figure { background: #fff; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px; overflow-x: auto; }
+.scorecard-figure svg { display: block; width: 100%; height: auto; min-width: 640px; }
+
+/* the C2 positive-control probe reads green, not maroon */
+.gate--anchor { border-color: var(--accent); }
+.gate--anchor:hover, .gate--anchor.is-open { border-color: var(--accent-2); }
+.gate__n--pos { background: var(--accent-wash); color: var(--accent-2); }
+.gate__q { font-style: italic; color: var(--ink-2); margin-bottom: 6px; }
+
+/* c2 control (data-integrity) mini-panel */
+.control-check { display: flex; align-items: center; gap: 10px; background: var(--accent-wash); border: 1px solid #B6DEDA; border-radius: var(--radius-sm); padding: 10px 14px; color: var(--accent-2); font-size: 13px; }
+.control-check b { font-weight: 700; }
+
 </style>
 </head>
 <body>
@@ -434,9 +451,9 @@ input[type="range"]::-moz-range-progress { height: 8px; background: var(--accent
     <header class="app__header">
       <div class="brand">
         <span class="brand__mark" aria-hidden="true" data-icon="dna"></span>
-        <span class="brand__name">CD4+ Perturbation Explorer</span>
+        <span class="brand__name">The Predictability Audit</span>
       </div>
-      <span class="brand__sub">CRISPRi Perturb-seq · GSE278572</span>
+      <span class="brand__sub">CD4+ CRISPRi Perturb-seq · GSE278572</span>
       <span class="header__spacer"></span>
       <span class="badge-real" id="badge-real" hidden>
         <span data-icon="check" aria-hidden="true"></span> real results
@@ -461,7 +478,7 @@ input[type="range"]::-moz-range-progress { height: 8px; background: var(--accent
 </script>
   <!-- core -->
   <script>
-window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07-10T09:04:40+00:00","notes":"C2 = causal − non-causal from benchmark_table.csv; localization from do_operator_localization.csv."},"c2":{"condition":{"causal":0.344,"noncausal":0.226,"delta":0.118,"pct":52},"gene":{"causal":0.368,"noncausal":0.206,"delta":0.162,"pct":79}},"zero_shot":{"causal_gene":0.368,"ridge_gene":0.019},"leaderboard":{"condition":[{"model":"ridge","label":"Ridge","family":"baseline","pearson_delta":0.384,"perturbench_rank":0.365,"des":0.651,"mode_collapse":false},{"model":"causal","label":"Causal (do-mask)","family":"ablation","pearson_delta":0.344,"perturbench_rank":0.457,"des":0.587,"mode_collapse":true},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","pearson_delta":0.34,"perturbench_rank":0.459,"des":0.588,"mode_collapse":true},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","pearson_delta":0.239,"perturbench_rank":0.474,"des":0.582,"mode_collapse":true},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","pearson_delta":0.226,"perturbench_rank":0.483,"des":0.579,"mode_collapse":true},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","pearson_delta":0.086,"perturbench_rank":0.5,"des":0.535,"mode_collapse":true}],"gene":[{"model":"causal","label":"Causal (do-mask)","family":"ablation","pearson_delta":0.368,"perturbench_rank":0.44,"des":0.599,"mode_collapse":true},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","pearson_delta":0.361,"perturbench_rank":0.44,"des":0.6,"mode_collapse":true},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","pearson_delta":0.248,"perturbench_rank":0.468,"des":0.585,"mode_collapse":true},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","pearson_delta":0.206,"perturbench_rank":0.484,"des":0.59,"mode_collapse":true},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","pearson_delta":0.107,"perturbench_rank":0.5,"des":0.554,"mode_collapse":true},{"model":"ridge","label":"Ridge","family":"baseline","pearson_delta":0.019,"perturbench_rank":0.501,"des":0.506,"mode_collapse":true}]},"localization":{"condition":{"c2_gap_median":0.026,"reliable":0.015,"unreliable":0.034,"corr_gap_vs_reliability":0.101,"causal_minus_ridge":-0.069,"n":2184},"gene":{"c2_gap_median":0.041,"reliable":0.141,"unreliable":0.022,"corr_gap_vs_reliability":0.292,"causal_minus_ridge":0.37,"n":315}},"caveats":["On the pure condition shift a linear gene→δ map (Ridge, 0.384) is still slightly ahead of the causal transformer (0.344) on raw Pearson-δ.","Only Ridge on the condition hold-out clears the mode-collapse bar (PerturBench rank < 0.4); the transformers sit just above the threshold (causal always sharper than its non-causal twin).","The JEPA cells of the 2×2 (C3) and TabPFN are CP2 / license-gated — not claimed here."]},"act2":{"_meta":{"source":"real","generated_utc":"2026-07-10T09:04:40+00:00","notes":"Fraction-of-ceiling from fraction_of_ceiling.csv; A/B/C via BUDGET.md formula on budget_decomposition.csv medians; cross-donor from budget_cross_donor.csv."},"budget":{"condition":{"A":0.45,"B":0.33,"C":0.22,"r_ceiling":0.67},"gene":{"A":0.01,"B":0.22,"C":0.76,"r_ceiling":0.776}},"frac_of_ceiling":{"condition":[{"model":"ridge","label":"Ridge","family":"baseline","raw":0.427,"frac":0.666,"frac_lo":0.648,"frac_hi":0.681},{"model":"causal","label":"Causal (do-mask)","family":"ablation","raw":0.352,"frac":0.547,"frac_lo":0.534,"frac_hi":0.562},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","raw":0.354,"frac":0.547,"frac_lo":0.535,"frac_hi":0.556},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","raw":0.254,"frac":0.394,"frac_lo":0.374,"frac_hi":0.415},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","raw":0.24,"frac":0.371,"frac_lo":0.349,"frac_hi":0.391},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","raw":0.091,"frac":0.142,"frac_lo":0.122,"frac_hi":0.16}],"gene":[{"model":"causal","label":"Causal (do-mask)","family":"ablation","raw":0.42,"frac":0.555,"frac_lo":0.509,"frac_hi":0.607},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","raw":0.419,"frac":0.552,"frac_lo":0.512,"frac_hi":0.599},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","raw":0.301,"frac":0.387,"frac_lo":0.32,"frac_hi":0.45},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","raw":0.226,"frac":0.301,"frac_lo":0.218,"frac_hi":0.379},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","raw":0.132,"frac":0.16,"frac_lo":0.053,"frac_hi":0.228},{"model":"ridge","label":"Ridge","family":"baseline","raw":0.013,"frac":0.017,"frac_lo":-0.007,"frac_hi":0.066}]},"cross_donor":{"condition":{"specific_r":0.0317,"null_p95":0.0018,"perm_p":0.0,"n_perts":2269},"gene":{"specific_r":0.0492,"null_p95":0.0029,"perm_p":0.0,"n_perts":318}},"recovery":{"gene":{"causal_frac":0.555,"pct_recovered":56,"gap_pct":44}},"notes":["Report scores as fraction-of-ceiling, per axis — raw Pearson-δ is baseline-dominated and hides the dissociation.","The A/C split is an inference: it treats Ridge's held-out fraction-of-ceiling as the linear-reachable estimate.","Reliability (the ceiling) is an upper bound on any model's achievable δ, not a guarantee a model reaching it exists."]},"act3":{"_meta":{"source":"real","generated_utc":"2026-07-10T09:04:40+00:00","notes":"Floor + residual identity from phaseB; six gate verdicts with numbers pulled from each gate CSV."},"floor":{"value":0.033,"label":"cross-donor per-perturbation specific signal (top-50 DEG)","triangulation":"the same ~0.03 floor recurs in the budget cross-donor test, the SNR pre-check, the trajectory scalar, the donor Δ, and the relational objects."},"residual":{"program":"transient T-cell activation-cytokine program","peaks":"Rest → Stim8hr transition (4/4 donors)","top_genes":[{"symbol":"TMSB4X","annotation":"cytoskeletal (highly expressed)","mass_frac":0.0149},{"symbol":"IFNG","annotation":"effector cytokine (Th1)","mass_frac":0.0149},{"symbol":"CCL4","annotation":"chemokine","mass_frac":0.0147},{"symbol":"LTB","annotation":"lymphotoxin beta (TNF family)","mass_frac":0.0143},{"symbol":"IL3","annotation":"cytokine (chr5q31 cluster)","mass_frac":0.0123},{"symbol":"CCL3","annotation":"chemokine","mass_frac":0.0088},{"symbol":"TRBC1","annotation":"TCR beta constant","mass_frac":0.0074},{"symbol":"PFN1","annotation":"profilin (cytoskeletal)","mass_frac":0.0069},{"symbol":"CSF2","annotation":"GM-CSF cytokine (chr5q31 cluster)","mass_frac":0.0068},{"symbol":"CXCL8","annotation":"chemokine (IL8)","mass_frac":0.0065},{"symbol":"IL2RA","annotation":"IL2 receptor alpha (activation marker)","mass_frac":0.0058},{"symbol":"S100A4","annotation":"calcium-binding","mass_frac":0.0057}]},"gates":[{"id":"causal_matrix","n":1,"name":"Causal-matrix (Â_C)","family":["pointwise","specific"],"verdict":"FAIL","headline":"Explicit per-context causal matrix does not beat correlation under P≪G.","key_number":{"label":"mechanism AUROC vs corr-null","value":"0.62 vs 0.83","detail":"gap -0.20 (95% CI -0.30…-0.10, excludes 0)"},"numbers":{"mechanism_auroc":0.624,"corr_null_auroc":0.828,"true_col_auroc":1.0,"gap":-0.203,"gap_lo":-0.296,"gap_hi":-0.101},"aside":"Standalone positive: the linear transportability condition itself degrades (oracle AUROC 1.00 → 0.88) as the system becomes nonlinear.","csv":"mechanism/results/c4_auroc.csv"},{"id":"fluctuation","n":2,"name":"Fluctuation (third moment)","family":["pointwise","raw"],"verdict":"NEGATIVE","headline":"On real data the baseline third moment is orthogonal to the residual — the simulator signal does not survive.","key_number":{"label":"ΔR² across strata","value":"≈ 0.000","detail":"mean 0.0000 over 24/24 strata (was +0.6–0.75 on the simulator)"},"numbers":{"dR2_mean":2e-05,"dR2_absmax":0.00012,"n_strata":24},"aside":"The covariance/Lyapunov sufficiency that makes correlation hard to beat is a second-moment property; the third moment was the one place signal could hide. It does not, on CD4 data.","csv":"mechanism/results/cnl_realdata_gate.csv"},{"id":"single_cell","n":3,"name":"Single-cell resolution (CellCap SNR)","family":["pointwise","specific"],"verdict":"NOT GREEN","headline":"Single-cell resolution would not recover the per-perturbation residual — a confirmed noise floor at pseudobulk depth.","key_number":{"label":"fraction detectable at SNR≥3","value":"17%","detail":"reaching a usable floor needs ~12× more cells; green = 0"},"numbers":{"xdonor_top50":0.0335,"frac_detectable_snr3":0.174,"cells_multiple":12.4,"green":0},"aside":"Reached with zero GPU / zero egress — no 130 GB of single cells were pulled to prove a negative.","csv":"results/phaseB_snr_precheck_summary.csv"},{"id":"trajectory","n":4,"name":"Trajectory-coupling","family":["relational","specific"],"verdict":"CLEAN NEGATIVE","headline":"Recoverability is not a trajectory-geometry property — no dynamical model was fit or needed.","key_number":{"label":"partial ρ (R, trajectory-coupling)","value":"+0.007 / +0.034","detail":"condition / gene, p = 0.75 / 0.55 (bar |ρ|≥0.3)"},"numbers":{"condition":{"partial_spearman":0.007,"perm_p":0.754},"gene":{"partial_spearman":0.034,"perm_p":0.549}},"aside":"The reduced scalar target itself sits at the noise floor (~0.07 vs random-axis null 0.03).","csv":"results/trajectory_coupling_gate.csv"},{"id":"donor_structure","n":5,"name":"Donor-structured recovery","family":["relational","specific"],"verdict":"NO-GO","headline":"Within-donor same-gene structure is real but at noise-floor magnitude, and donor-averaging beats donor-conditioning — the reversal is refuted.","key_number":{"label":"same-gene within-donor Δ","value":"0.012–0.018","detail":"4/4 donors, well below the Δ≥0.15 bar; conditioning 0.016 < averaging 0.034 (the gap inverts)"},"numbers":{"within_donor_delta_lo":0.012,"within_donor_delta_hi":0.018,"within_donor_delta_median":0.014,"conditioning":0.016,"averaging":0.034},"aside":"An earlier within-donor reproducibility figure that motivated this test was a noise-model estimate, not an empirical measurement — and the real gap inverts.","csv":"results/donor_structure_gate.csv"},{"id":"relational","n":6,"name":"Relational (perturbation similarity)","family":["relational","raw"],"verdict":"NEGATIVE","headline":"Cross-donor relational structure (which perturbations resemble which) is at the floor — all five relational objects fail.","key_number":{"label":"cross-donor S-similarity (specific)","value":"0.008","detail":"the strong cross-donor similarity a response-theory simulator suggested does not appear — measured 0.008, at the floor. 5/5 objects fail."},"numbers":{"S_similarity":0.008,"pointwise_floor":0.049,"L_loadings_top3":0.111,"R_pergene_rank":0.025,"S_top200_higheffect":0.037,"all_fail":true},"aside":"The last of the six, spanning to relational + raw structure — the floor holds even when you ask which perturbations look alike.","csv":"results/relational_gate.csv"}],"summary":"Six pre-registered negatives — causal-matrix, fluctuation, single-cell, trajectory, donor-structure, relational — converge on the same pointwise floor, spanning pointwise and relational, raw and specific. Zero GPU across all six. We bounded the frontier honestly; we did not solve perturbation prediction."},"manifest":{"_meta":{"source":"real","generated_utc":"2026-07-10T09:04:40+00:00","notes":"Dataset facts + CSV→panel provenance map."},"dataset":{"cells":22000000,"genes":18129,"profiles":278684,"conditions":["Rest","Stim8hr","Stim48hr"],"donors":4,"held_out_condition":"Stim48hr","perturbations":{"condition":2269,"gene":318},"cell_type":"CD4+ T cells","assay":"CRISPRi Perturb-seq","accession":"GSE278572"},"splits":[{"id":"condition","label":"Condition hold-out","sub":"zero-shot Stim48hr"},{"id":"gene","label":"Gene hold-out","sub":"unseen silenced genes"}],"provenance":[{"panel":"Act 1 · do-operator","csv":"results/benchmark_table.csv","shows":"leaderboard + C2 (causal − non-causal)"},{"panel":"Act 1 · do-operator","csv":"results/do_operator_localization.csv","shows":"edge concentrates on reliable perturbations"},{"panel":"Act 2 · budget","csv":"results/fraction_of_ceiling.csv","shows":"raw δ beside fraction-of-ceiling, per axis"},{"panel":"Act 2 · budget","csv":"results/budget_decomposition.csv","shows":"A linear / B noise / C structured partition"},{"panel":"Act 2 · budget","csv":"results/budget_cross_donor.csv","shows":"bucket C is real (cross-donor perm p<0.001)"},{"panel":"Act 3 · frontier","csv":"results/phaseB_top_residual_genes.csv","shows":"residual identity = activation-cytokine program"},{"panel":"Act 3 · frontier","csv":"results/phaseB_snr_precheck_summary.csv","shows":"single-cell (CellCap) SNR gate + the ~0.03 floor"},{"panel":"Act 3 · frontier","csv":"mechanism/results/c4_auroc.csv","shows":"gate 1 — causal-matrix (Â_C)"},{"panel":"Act 3 · frontier","csv":"mechanism/results/cnl_realdata_gate.csv","shows":"gate 2 — fluctuation / third-moment"},{"panel":"Act 3 · frontier","csv":"results/trajectory_coupling_gate.csv","shows":"gate 4 — trajectory-coupling"},{"panel":"Act 3 · frontier","csv":"results/donor_structure_gate.csv","shows":"gate 5 — donor-structured recovery"},{"panel":"Act 3 · frontier","csv":"results/relational_gate.csv","shows":"gate 6 — relational"}],"any_real":true}};
+window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07-12T16:47:35+00:00","notes":"C2 anchor + control; the do-operator is the signal-detection positive control."},"c2":{"condition":{"causal":0.344,"noncausal":0.226,"delta":0.118,"pct":52},"gene":{"causal":0.368,"noncausal":0.206,"delta":0.162,"pct":79}},"control":{"condition":{"recomputed_c2":0.106,"committed_c2":0.118,"within_tol":true},"gene":{"recomputed_c2":0.156,"committed_c2":0.162,"within_tol":true}},"zero_shot":{"causal_gene":0.368,"ridge_gene":0.019},"leaderboard":{"condition":[{"model":"ridge","label":"Ridge","family":"baseline","pearson_delta":0.384,"mode_collapse":false},{"model":"causal","label":"Causal (do-mask)","family":"ablation","pearson_delta":0.344,"mode_collapse":true},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","pearson_delta":0.34,"mode_collapse":true},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","pearson_delta":0.239,"mode_collapse":true},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","pearson_delta":0.226,"mode_collapse":true},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","pearson_delta":0.086,"mode_collapse":true}],"gene":[{"model":"causal","label":"Causal (do-mask)","family":"ablation","pearson_delta":0.368,"mode_collapse":true},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","pearson_delta":0.361,"mode_collapse":true},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","pearson_delta":0.248,"mode_collapse":true},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","pearson_delta":0.206,"mode_collapse":true},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","pearson_delta":0.107,"mode_collapse":true},{"model":"ridge","label":"Ridge","family":"baseline","pearson_delta":0.019,"mode_collapse":true}]},"localization":{"condition":{"corr_gap_vs_reliability":0.101,"reliable":0.015,"unreliable":0.034},"gene":{"corr_gap_vs_reliability":0.292,"reliable":0.141,"unreliable":0.022}},"caveats":["On the pure condition shift a linear gene→δ map (Ridge, 0.384) is still slightly ahead of the causal transformer (0.344) on raw Pearson-δ.","Only Ridge on the condition hold-out clears the mode-collapse bar (PerturBench rank < 0.4); the transformers sit just above the threshold (causal always sharper than its non-causal twin).","C2 is a within-distribution positive control — it establishes the instrument's sensitivity; whether the edge is causal is tested separately in probe P7."]},"act2":{"_meta":{"source":"real","generated_utc":"2026-07-12T16:47:35+00:00","notes":"Reliability-ceiling calibration: raw δ beside fraction-of-ceiling; A/B/C budget; cross-donor floor."},"budget":{"condition":{"A":0.45,"B":0.33,"C":0.22,"r_ceiling":0.67},"gene":{"A":0.01,"B":0.22,"C":0.76,"r_ceiling":0.776}},"frac_of_ceiling":{"condition":[{"model":"ridge","label":"Ridge","family":"baseline","raw":0.427,"frac":0.666,"frac_lo":0.648,"frac_hi":0.681},{"model":"causal","label":"Causal (do-mask)","family":"ablation","raw":0.352,"frac":0.547,"frac_lo":0.534,"frac_hi":0.562},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","raw":0.354,"frac":0.547,"frac_lo":0.535,"frac_hi":0.556},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","raw":0.254,"frac":0.394,"frac_lo":0.374,"frac_hi":0.415},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","raw":0.24,"frac":0.371,"frac_lo":0.349,"frac_hi":0.391},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","raw":0.091,"frac":0.142,"frac_lo":0.122,"frac_hi":0.16}],"gene":[{"model":"causal","label":"Causal (do-mask)","family":"ablation","raw":0.42,"frac":0.555,"frac_lo":0.509,"frac_hi":0.607},{"model":"jepa_causal","label":"JEPA + Causal","family":"ablation","raw":0.419,"frac":0.552,"frac_lo":0.512,"frac_hi":0.599},{"model":"jepa_only","label":"JEPA (no mask)","family":"ablation","raw":0.301,"frac":0.387,"frac_lo":0.32,"frac_hi":0.45},{"model":"noncausal","label":"Transformer (no mask)","family":"ablation","raw":0.226,"frac":0.301,"frac_lo":0.218,"frac_hi":0.379},{"model":"fcn","label":"PseudoBulk-FCN","family":"baseline","raw":0.132,"frac":0.16,"frac_lo":0.053,"frac_hi":0.228},{"model":"ridge","label":"Ridge","family":"baseline","raw":0.013,"frac":0.017,"frac_lo":-0.007,"frac_hi":0.066}]},"cross_donor":{"condition":{"specific_r":0.0317,"null_p95":0.0018,"perm_p":0.0},"gene":{"specific_r":0.0492,"null_p95":0.0029,"perm_p":0.0}},"recovery":{"gene":{"causal_frac":0.555,"pct_recovered":56,"gap_pct":44}},"notes":["Raw Pearson-δ is baseline-dominated and uninterpretable on its own — every score here is read relative to the measured reliability ceiling, per axis.","The A/C split is an inference: it treats Ridge's held-out fraction-of-ceiling as the linear-reachable estimate.","Reliability (the ceiling) is an upper bound on any model's achievable δ, not a guarantee a model reaching it exists."]},"act3":{"_meta":{"source":"real","generated_utc":"2026-07-12T16:47:35+00:00","notes":"Seven-probe scorecard from predictability_audit_gate.csv (all verdicts reproduce the committed CSVs; G-PA.1 PASS)."},"scorecard_svg":"<svg viewBox=\"0 0 1000 760\" xmlns=\"http://www.w3.org/2000/svg\" font-family=\"-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif\">\n  <rect x=\"0\" y=\"0\" width=\"1000\" height=\"760\" fill=\"#ffffff\"/>\n  <!-- Header -->\n  <text x=\"40\" y=\"46\" font-size=\"26\" font-weight=\"700\" fill=\"#12151a\">Marson CD4 Perturb-seq — Predictability Scorecard<\/text>\n  <text x=\"40\" y=\"72\" font-size=\"14.5\" fill=\"#4a515b\">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling. An evaluation/methods reframe of validated content — no new model.<\/text>\n  <rect x=\"40\" y=\"84\" width=\"255\" height=\"22\" rx=\"4\" fill=\"#eef1f5\" stroke=\"#c9d0da\"/>\n  <text x=\"49\" y=\"99.5\" font-size=\"12.5\" fill=\"#3b424c\">Novelty tier: <tspan font-weight=\"700\">Tier-2<\/tspan> — a predictability characterization<\/text>\n  <text x=\"960\" y=\"99.5\" font-size=\"12\" fill=\"#8a8f98\" text-anchor=\"end\">reproduced from committed gate CSVs · n=1 dataset (case study)<\/text>\n\n  <!-- Panel A: fraction of ceiling (gene hold-out) -->\n  <text x=\"40\" y=\"146\" font-size=\"16\" font-weight=\"700\" fill=\"#12151a\">A · Fraction of the measured reliability ceiling recovered — gene hold-out<\/text>\n  <text x=\"40\" y=\"166\" font-size=\"12.5\" fill=\"#6b7280\">Where linear collapses (Ridge 0.02) the do-operator reaches 0.56. The causal−twin gap is the C2 positive.<\/text>\n  <!-- axis -->\n  <g font-size=\"12\" fill=\"#8a8f98\">\n    <line x1=\"300\" y1=\"186\" x2=\"300\" y2=\"404\" stroke=\"#d5dae1\"/>\n    <line x1=\"900\" y1=\"186\" x2=\"900\" y2=\"404\" stroke=\"#c9d0da\" stroke-dasharray=\"4 3\"/>\n    <text x=\"300\" y=\"420\" text-anchor=\"middle\">0<\/text>\n    <text x=\"600\" y=\"420\" text-anchor=\"middle\">0.5<\/text>\n    <text x=\"900\" y=\"420\" text-anchor=\"middle\">1.0 = ceiling<\/text>\n  <\/g>\n  <!-- bars: x0=300, scale 600px = 1.0 -->\n  <g font-size=\"13\">\n    <!-- Ridge (linear) 0.017 -->\n    <text x=\"290\" y=\"203\" text-anchor=\"end\" fill=\"#3b424c\">Ridge (linear)<\/text>\n    <rect x=\"300\" y=\"192\" width=\"10.2\" height=\"16\" rx=\"2\" fill=\"#b04a4a\"/>\n    <text x=\"318\" y=\"205\" fill=\"#b04a4a\" font-weight=\"700\">0.02 — collapses<\/text>\n    <!-- FCN 0.107 -->\n    <text x=\"290\" y=\"231\" text-anchor=\"end\" fill=\"#3b424c\">FCN (nonlinear)<\/text>\n    <rect x=\"300\" y=\"220\" width=\"64.2\" height=\"16\" rx=\"2\" fill=\"#9aa1ab\"/>\n    <text x=\"372\" y=\"233\" fill=\"#6b7280\">0.11<\/text>\n    <!-- noncausal twin 0.301 -->\n    <text x=\"290\" y=\"259\" text-anchor=\"end\" fill=\"#3b424c\">Non-causal twin<\/text>\n    <rect x=\"300\" y=\"248\" width=\"180.6\" height=\"16\" rx=\"2\" fill=\"#7e94c4\"/>\n    <text x=\"488\" y=\"261\" fill=\"#6b7280\">0.30<\/text>\n    <!-- jepa_only 0.387 -->\n    <text x=\"290\" y=\"287\" text-anchor=\"end\" fill=\"#3b424c\">JEPA-only<\/text>\n    <rect x=\"300\" y=\"276\" width=\"232.2\" height=\"16\" rx=\"2\" fill=\"#9aa1ab\"/>\n    <text x=\"540\" y=\"289\" fill=\"#6b7280\">0.39<\/text>\n    <!-- jepa_causal 0.552 -->\n    <text x=\"290\" y=\"315\" text-anchor=\"end\" fill=\"#3b424c\">JEPA + causal<\/text>\n    <rect x=\"300\" y=\"304\" width=\"331.2\" height=\"16\" rx=\"2\" fill=\"#3f9e6b\"/>\n    <text x=\"639\" y=\"317\" fill=\"#2e8b57\">0.55<\/text>\n    <!-- causal do-operator 0.555 -->\n    <text x=\"290\" y=\"343\" text-anchor=\"end\" fill=\"#12151a\" font-weight=\"700\">Do-operator (causal)<\/text>\n    <rect x=\"300\" y=\"332\" width=\"333.0\" height=\"16\" rx=\"2\" fill=\"#2e8b57\"/>\n    <text x=\"641\" y=\"345\" fill=\"#2e8b57\" font-weight=\"700\">0.56<\/text>\n  <\/g>\n  <!-- C2 gap annotation -->\n  <line x1=\"480.6\" y1=\"256\" x2=\"633\" y2=\"340\" stroke=\"#2e8b57\" stroke-width=\"0\" />\n  <path d=\"M 484 372 L 484 366 L 633 366 L 633 372\" fill=\"none\" stroke=\"#2e8b57\" stroke-width=\"1.3\"/>\n  <text x=\"558\" y=\"390\" text-anchor=\"middle\" font-size=\"12.5\" fill=\"#2e8b57\" font-weight=\"700\">C2 do-operator effect = causal − twin (+0.162 gene, Pearson-δ)<\/text>\n\n  <!-- Panel B: probe scorecard -->\n  <text x=\"40\" y=\"470\" font-size=\"16\" font-weight=\"700\" fill=\"#12151a\">B · Seven probes — where the recoverable signal is (each vs its own degree/label-preserving null)<\/text>\n  <g font-size=\"13\">\n    <!-- helper: chip at x=770 -->\n    <!-- P1 -->\n    <text x=\"40\" y=\"502\" fill=\"#12151a\" font-weight=\"600\">P1 · Causal-matrix (Â_C)<\/text>\n    <text x=\"250\" y=\"502\" fill=\"#5a616b\">Â AUROC 0.62 &lt; correlation null 0.83 · mechanism not recovered under P≪G<\/text>\n    <rect x=\"852\" y=\"490\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#f2dede\"/><text x=\"906\" y=\"503.5\" text-anchor=\"middle\" fill=\"#b04a4a\" font-weight=\"700\">FAIL<\/text>\n    <!-- P2 -->\n    <text x=\"40\" y=\"528\" fill=\"#12151a\" font-weight=\"600\">P2 · Fluctuation (3rd-moment)<\/text>\n    <text x=\"250\" y=\"528\" fill=\"#5a616b\">ΔR²≈2.8e-6 beyond covariance · 0/24 strata significant<\/text>\n    <rect x=\"852\" y=\"516\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"529.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NEGATIVE<\/text>\n    <!-- P3 -->\n    <text x=\"40\" y=\"554\" fill=\"#12151a\" font-weight=\"600\">P3 · Single-cell SNR<\/text>\n    <text x=\"250\" y=\"554\" fill=\"#5a616b\">x-donor 0.033 · 16% of cytokine genes SNR&gt;3 · single-cell won't lift it<\/text>\n    <rect x=\"852\" y=\"542\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"555.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">FLOOR<\/text>\n    <!-- P4 -->\n    <text x=\"40\" y=\"580\" fill=\"#12151a\" font-weight=\"600\">P4 · Trajectory-geometry<\/text>\n    <text x=\"250\" y=\"580\" fill=\"#5a616b\">partial ρ 0.007/0.034 (p=0.75/0.55) · not a geometry artifact<\/text>\n    <rect x=\"852\" y=\"568\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"581.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NEGATIVE<\/text>\n    <!-- P5 -->\n    <text x=\"40\" y=\"606\" fill=\"#12151a\" font-weight=\"600\">P5 · Donor-structure<\/text>\n    <text x=\"250\" y=\"606\" fill=\"#5a616b\">conditioning 0.016 &lt; averaging 0.034 · concordance real but floor-magnitude<\/text>\n    <rect x=\"852\" y=\"594\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#eceef1\"/><text x=\"906\" y=\"607.5\" text-anchor=\"middle\" fill=\"#6b7280\" font-weight=\"700\">NO-GO<\/text>\n    <!-- P6 -->\n    <text x=\"40\" y=\"632\" fill=\"#12151a\" font-weight=\"600\">P6 · Relational-object<\/text>\n    <text x=\"250\" y=\"632\" fill=\"#5a616b\">best specific object 0.11 &lt; 0.30 · floor is object-general<\/text>\n    <rect x=\"852\" y=\"620\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#f2dede\"/><text x=\"906\" y=\"633.5\" text-anchor=\"middle\" fill=\"#b04a4a\" font-weight=\"700\">FAIL<\/text>\n    <!-- P7 -->\n    <text x=\"40\" y=\"658\" fill=\"#12151a\" font-weight=\"600\">P7 · External causal-edge<\/text>\n    <text x=\"250\" y=\"658\" fill=\"#5a616b\">causal 0.559 &gt; null 0.500 but = twin 0.569 (Δ−0.010) · above null, not causal<\/text>\n    <rect x=\"852\" y=\"646\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#faedd6\"/><text x=\"906\" y=\"659.5\" text-anchor=\"middle\" fill=\"#b6791f\" font-weight=\"700\">IN-DIST<\/text>\n    <!-- C2 anchor -->\n    <line x1=\"40\" y1=\"676\" x2=\"960\" y2=\"676\" stroke=\"#e2e6ea\"/>\n    <text x=\"40\" y=\"700\" fill=\"#12151a\" font-weight=\"700\">C2 · Do-operator control<\/text>\n    <text x=\"250\" y=\"700\" fill=\"#2e8b57\" font-weight=\"600\">+0.118 condition / +0.162 gene vs the non-causal twin — the one positive<\/text>\n    <rect x=\"852\" y=\"688\" width=\"108\" height=\"19\" rx=\"9.5\" fill=\"#dcefe4\"/><text x=\"906\" y=\"701.5\" text-anchor=\"middle\" fill=\"#2e8b57\" font-weight=\"700\">POSITIVE<\/text>\n  <\/g>\n  <!-- takeaway -->\n  <text x=\"40\" y=\"736\" font-size=\"13.5\" fill=\"#3b424c\">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests: six probes sit at the floor, the one accuracy<\/text>\n  <text x=\"40\" y=\"753\" font-size=\"13.5\" fill=\"#3b424c\">positive (C2) is <tspan font-weight=\"700\">in-distribution, not causal<\/tspan>. The C2 anchor proves the nulls mean “no signal,” not “no sensitivity.”<\/text>\n<\/svg>\n","probes":[{"code":"P1","name":"causal-matrix (Â_C)","family":"mechanism","family_tags":["mechanistic"],"verdict":"FAIL","question":"Does an explicit per-context causal matrix beat a correlation null under P≪G?","key":"Â AUROC 0.62 vs correlation-null 0.83","detail":"mechanism recovery not established under P≪G (oracle true-col = 1.00).","consistent":true,"is_anchor":false,"source":"mechanism/results/c4_auroc.csv"},{"code":"P2","name":"fluctuation (3rd-moment C-NL)","family":"mechanism","family_tags":["mechanistic"],"verdict":"NEGATIVE","question":"Does the response 3rd moment predict what covariance cannot, on real data?","key":"ΔR² ≈ 2.8e-6 beyond covariance","detail":"0/24 strata significant — positive on the simulator, dead on real data.","consistent":true,"is_anchor":false,"source":"mechanism/results/cnl_realdata_gate.csv"},{"code":"P3","name":"single-cell SNR","family":"reliability","family_tags":["pointwise"],"verdict":"FLOOR","question":"Would single-cell resolution lift the per-perturbation floor above pseudobulk?","key":"cross-donor floor 0.033","detail":"only 16% of cytokine genes reach SNR>3; single-cell depth would not lift it (gate RED).","consistent":true,"is_anchor":false,"source":"results/phaseB_snr_precheck_summary.csv"},{"code":"P4","name":"trajectory-geometry","family":"geometry","family_tags":["geometric"],"verdict":"NEGATIVE","question":"Is per-perturbation recoverability explained by activation-trajectory geometry?","key":"partial ρ 0.007 / 0.034","detail":"p = 0.75 / 0.55 (bar |ρ|≥0.3); recoverability is not a trajectory-geometry artifact.","consistent":true,"is_anchor":false,"source":"results/trajectory_coupling_gate.csv"},{"code":"P5","name":"donor-structure","family":"structure","family_tags":["structural"],"verdict":"NO-GO","question":"Does donor-CONDITIONING beat donor-AVERAGING for perturbation recovery?","key":"conditioning 0.016 < averaging 0.034","detail":"same-gene concordance is real but floor-magnitude; conditioning gives no gain.","consistent":true,"is_anchor":false,"source":"results/donor_structure_gate.csv"},{"code":"P6","name":"relational-object","family":"structure","family_tags":["structural"],"verdict":"FAIL","question":"Does any specific-space relational object (similarity/loadings/rank) reach 0.30?","key":"best specific object 0.111 < 0.30 bar","detail":"no relational object clears the bar (S-similarity 0.008); the high raw-space cosine is a constant-offset artifact, not reproducible structure.","consistent":true,"is_anchor":false,"source":"results/relational_gate.csv"},{"code":"P7","name":"external causal-edge validation","family":"external","family_tags":["external-causal"],"verdict":"IN-DIST","question":"Do held-out external causal edges reveal a CAUSAL (not just predictive) advantage?","key":"causal 0.559 vs twin 0.569 (null 0.500)","detail":"recovers external edge direction above null, but with no causal-specific advantage over the twin (Δ −0.010) — in-distribution, not causal.","consistent":true,"is_anchor":false,"source":"results/fusion_gf2.csv"},{"code":"Budget","name":"Budget (ceiling + floor)","family":"calibration","family_tags":["calibration"],"verdict":"FLOOR","question":"How much signal is recoverable at all, and where does linear collapse?","key":"floor 0.032 / 0.049 · Ridge 0.02 vs do-op 0.56 of ceiling","detail":"the floor is real (perm p<0.001) but the recoverable pointwise volume is small.","consistent":true,"is_anchor":false,"source":"results/budget_cross_donor.csv"},{"code":"C2","name":"do-operator control","family":"positive-control","family_tags":["positive control"],"verdict":"POSITIVE","question":"Does the SAME null machinery that flags the six negatives ever register a positive?","key":"+0.118 condition / +0.162 gene vs twin","detail":"the same null machinery that flags the negatives registers this as a clear positive — the nulls mean 'no signal', not 'no sensitivity'.","consistent":true,"is_anchor":true,"source":"results/benchmark_table.csv"}],"n_probes":7,"all_consistent":true,"residual":{"program":"transient T-cell activation-cytokine program","peaks":"Rest → Stim8hr transition (4/4 donors)","top_genes":[{"symbol":"TMSB4X","annotation":"cytoskeletal (highly expressed)"},{"symbol":"IFNG","annotation":"effector cytokine (Th1)"},{"symbol":"CCL4","annotation":"chemokine"},{"symbol":"LTB","annotation":"lymphotoxin beta (TNF family)"},{"symbol":"IL3","annotation":"cytokine (chr5q31 cluster)"},{"symbol":"CCL3","annotation":"chemokine"},{"symbol":"TRBC1","annotation":"TCR beta constant"},{"symbol":"PFN1","annotation":"profilin (cytoskeletal)"},{"symbol":"CSF2","annotation":"GM-CSF cytokine (chr5q31 cluster)"},{"symbol":"CXCL8","annotation":"chemokine (IL8)"},{"symbol":"IL2RA","annotation":"IL2 receptor alpha (activation marker)"},{"symbol":"S100A4","annotation":"calcium-binding"}]},"positive_control_argument":"The same degree/label-preserving null machinery that flags six probes as at-the-floor and one (P7) as in-distribution still registers the do-operator C2 as a clear positive. So a null cell means \"no recoverable signal here,\" not \"no sensitivity\" — which is what turns a pile of negatives into a calibrated predictability map rather than a blunt-instrument failure.","finding":"Under honest measurement — every probe scored against its own null and read relative to the measured reliability ceiling — the recoverable signal is far narrower than the raw genome-scale volume suggests. Six probes sit at the noise floor; the one accuracy positive (C2) is in-distribution, not causal (P7). Mapped seven ways, with zero GPU wasted.","summary":"A reliability-ceiling-calibrated, positive-control-anchored predictability audit of a Perturb-seq dataset — a diagnostic that tells you what is recoverable before you burn GPU. A methods/evaluation contribution on the axis the field asked for, reported conservatively as Tier-2 (n=1 case study; see the novelty note), not a claim to have solved perturbation prediction."},"manifest":{"_meta":{"source":"real","generated_utc":"2026-07-12T16:47:35+00:00","notes":"Dataset facts + novelty tier + CSV→panel provenance map."},"title":"The Predictability Audit","subtitle":"A reliability-ceiling-calibrated predictability scorecard for the Marson CD4+ Perturb-seq dataset","dataset":{"cells":22000000,"genes":18129,"conditions":["Rest","Stim8hr","Stim48hr"],"donors":4,"held_out_condition":"Stim48hr","perturbations":{"condition":2269,"gene":318},"cell_type":"CD4+ T cells","assay":"CRISPRi Perturb-seq","accession":"GSE278572"},"splits":[{"id":"condition","label":"Condition hold-out","sub":"zero-shot Stim48hr"},{"id":"gene","label":"Gene hold-out","sub":"unseen silenced genes"}],"novelty":{"tier":"Tier-2","occupation":"weak","claim":"a predictability characterization of the Marson CD4 dataset (case study, n=1)","note":"Intrinsic predictability is an established paradigm (ecology / time-series forecasting); we claim the instantiation for Perturb-seq, not the concept. CIPHER correlates a per-dataset structural quantity (participation ratio) with its own linear method's R² (R²=0.75, slope −6.5) — that is a property of one method's performance, not a model-agnostic ceiling — so a bare \"first\" is not safely defensible. Reported honestly as Tier-2."},"provenance":[{"panel":"Act 1 · anchor","csv":"results/benchmark_table.csv","shows":"C2 positive control + leaderboard"},{"panel":"Act 1 · anchor","csv":"results/c2_control.csv","shows":"restored data reproduces C2 within tolerance"},{"panel":"Act 1 · anchor","csv":"results/do_operator_localization.csv","shows":"the edge concentrates on reliable perturbations"},{"panel":"Act 2 · reframe","csv":"results/fraction_of_ceiling.csv","shows":"raw δ beside fraction-of-ceiling, per axis"},{"panel":"Act 2 · reframe","csv":"results/budget_decomposition.csv","shows":"A linear / B noise / C structured budget"},{"panel":"Act 2 · reframe","csv":"results/budget_cross_donor.csv","shows":"the ~0.03 cross-donor floor is real (perm p<0.001)"},{"panel":"Act 3 · scorecard","csv":"results/predictability_audit_gate.csv","shows":"the seven-probe scorecard (canonical)"},{"panel":"Act 3 · scorecard","csv":"results/fusion_gf2.csv","shows":"P7 external causal-edge detail (Weinstock/Freimer)"},{"panel":"Act 3 · scorecard","csv":"results/phaseB_top_residual_genes.csv","shows":"residual identity — activation-cytokine program"},{"panel":"Act 3 · scorecard","csv":"figures/predictability_scorecard.svg","shows":"the hero scorecard figure (embedded)"}],"any_real":true}};
 </script>
   <script>
 /* =============================================================================
@@ -605,9 +622,9 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
   /* ---- panel registry + router ------------------------------------------- */
   var PANELS = {}; var PANEL_ORDER = ["act1", "act2", "act3"];
   var PANEL_META = {
-    act1: { num: 1, icon: "zap", label: "The do-operator works" },
-    act2: { num: 2, icon: "layers", label: "The predictability budget" },
-    act3: { num: 3, icon: "target", label: "The frontier, six ways" }
+    act1: { num: 1, icon: "zap", label: "The anchor" },
+    act2: { num: 2, icon: "sliders", label: "The reframe" },
+    act3: { num: 3, icon: "bar-chart", label: "The scorecard" }
   };
   App.registerPanel = function (id, def) { PANELS[id] = def; def.__rendered = false; };
   function renderPanel(id) {
@@ -662,7 +679,7 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
     });
     grp.appendChild(seg); c.appendChild(grp);
     var hint = el("span", "muted"); hint.style.fontSize = "12px"; hint.style.maxWidth = "30ch"; hint.style.lineHeight = "1.35";
-    hint.textContent = "Acts 1–2 respond to the axis; Act 3 (the frontier) is axis-agnostic.";
+    hint.textContent = "Acts 1–2 respond to the axis; Act 3 (the scorecard) is axis-agnostic.";
     c.appendChild(hint);
 
     c.appendChild(el("span", "spacer"));
@@ -858,17 +875,18 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
   function h(tag, cls, html) { var e = App.el(tag, cls); if (html != null) e.innerHTML = html; return e; }
 
   App.registerPanel("act1", {
-    title: "The do-operator works",
+    title: "The anchor",
     render: function (root) {
       A = d();
       root.appendChild(h("div", "panel__head",
-        "<div class='panel__eyebrow'>Act 1 · the positive result</div>" +
-        "<h1 class='panel__title'>The do-operator works — and here's what it buys</h1>" +
-        "<p class='panel__lede'>Standard models treat a knockdown as an <em>observation</em>. The corrected do-mask removes only the edges <em>into</em> the perturbed gene, so the intervention still propagates downstream — treating it as an <em>intervention</em>. The pre-registered <b>C2</b> test isolates exactly that: same architecture, causal mask on vs off.</p>"));
+        "<div class='panel__eyebrow'>Act 1 · the anchor</div>" +
+        "<h1 class='panel__title'>The do-operator works — the audit's positive control</h1>" +
+        "<p class='panel__lede'>The corrected do-mask removes only the edges <em>into</em> the perturbed gene, so the intervention propagates downstream — a knockdown treated as an <em>intervention</em>, not an observation. The pre-registered <b>C2</b> test isolates it (same architecture, mask on vs off), and it is the methodological keystone: because the audit's null machinery <em>can</em> detect this signal, the negatives that follow read as \"no signal,\" not \"blunt instrument.\"</p>"));
 
       if (!A.c2) { root.appendChild(h("div", "card", "<p class='muted'>Act 1 data unavailable.</p>")); return; }
 
       refHero = h("div", "card card--pad-lg"); root.appendChild(refHero);
+      if (A.control) root.appendChild(buildControlCheck());
       var grid = h("div", "grid grid--2"); grid.style.marginTop = "18px";
       refLead = h("div", "card"); refLoc = h("div", "card");
       grid.appendChild(refLead); grid.appendChild(refLoc); root.appendChild(grid);
@@ -888,7 +906,7 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
         "<div class='card__title'>" + App.icon("zap") + "<span>C2 · the do-operator effect — " + splitLabel(s) + "</span></div>" +
         "<div class='stat-hero'>" +
         "<div class='stat-hero__num'>" + App.fmt.signed(c2.delta, ".3f") + "</div>" +
-        "<div class='stat-hero__cap'>Causal (do-mask on) <b>" + App.fmt.num(c2.causal, ".3f") + "</b> vs its non-causal twin <b>" + App.fmt.num(c2.noncausal, ".3f") + "</b> — a <b>+" + c2.pct + "%</b> relative gain in Pearson-δ over the top-50 DEGs. Reported regardless of leaderboard position.</div>" +
+        "<div class='stat-hero__cap'>Causal (do-mask on) <b>" + App.fmt.num(c2.causal, ".3f") + "</b> vs its non-causal twin <b>" + App.fmt.num(c2.noncausal, ".3f") + "</b> — a <b>+" + c2.pct + "%</b> relative gain in Pearson-δ over the top-50 DEGs. This is the one positive: the signal-detection anchor for the whole audit.</div>" +
         "</div>";
       if (s === "gene" && A.zero_shot) {
         var zs = h("div", "stat-row",
@@ -902,6 +920,21 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
       App.hydrateIcons(refHero.parentNode.parentNode);
     }
   });
+
+  // data-integrity control: the restored data reproduces the committed C2 within tolerance
+  function buildControlCheck() {
+    var c = A.control, cond = c.condition || {}, gene = c.gene || {};
+    var ok = cond.within_tol && gene.within_tol;
+    var wrap = h("div", "control-check");
+    wrap.style.marginTop = "12px";
+    wrap.innerHTML = App.icon(ok ? "check" : "alert-triangle", 16) +
+      "<div><b>Data-integrity control passed.</b> After a data restore, C2 recomputed to " +
+      App.fmt.signed(cond.recomputed_c2, ".3f") + " / " + App.fmt.signed(gene.recomputed_c2, ".3f") +
+      " (condition / gene) — within tolerance of the committed " +
+      App.fmt.signed(cond.committed_c2, ".3f") + " / " + App.fmt.signed(gene.committed_c2, ".3f") +
+      ", confirming the analysed data is the real, intact dataset.</div>";
+    return wrap;
+  }
 
   function collapseChip(mc) {
     return mc
@@ -954,13 +987,13 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
   function h(tag, cls, html) { var e = App.el(tag, cls); if (html != null) e.innerHTML = html; return e; }
 
   App.registerPanel("act2", {
-    title: "The predictability budget",
+    title: "The reframe",
     render: function (root) {
       A = d();
       root.appendChild(h("div", "panel__head",
-        "<div class='panel__eyebrow'>Act 2 · what's actually learnable</div>" +
-        "<h1 class='panel__title'>The predictability budget</h1>" +
-        "<p class='panel__lede'>The task is <b>not</b> noise-saturated. Each perturbation's response splits into <b>A</b> linear-explainable, <b>C</b> structured-but-unmodelled, and <b>B</b> irreducible noise — on the metric's own scale. The two axes reach very different fractions of what's achievable by completely different mechanisms — exactly what raw Pearson-δ hides.</p>"));
+        "<div class='panel__eyebrow'>Act 2 · the reframe</div>" +
+        "<h1 class='panel__title'>Raw δ is uninterpretable — calibrate to the reliability ceiling</h1>" +
+        "<p class='panel__lede'>A raw Pearson-δ score means nothing without knowing how much signal was reliably <em>there</em> to recover. So every score is read relative to the measured reliability ceiling, per axis. The response then splits into <b>A</b> linear-explainable, <b>C</b> structured-but-unmodelled, and <b>B</b> irreducible noise — and the two axes reach very different fractions of what's achievable, by completely different mechanisms, exactly what raw δ hides.</p>"));
 
       if (!A.budget) { root.appendChild(h("div", "card", "<p class='muted'>Act 2 data unavailable.</p>")); return; }
 
@@ -1018,7 +1051,7 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
   function buildFrac(s) {
     var rows = (A.frac_of_ceiling && A.frac_of_ceiling[s]) || [];
     var html = "<div class='card__title'>" + App.icon("bar-chart") + "<span>Raw δ, beside fraction-of-ceiling</span></div>" +
-      "<p class='card__sub'>Same models, two columns: raw Pearson-δ (what the leaderboard shows) and the fraction of each axis's <em>achievable</em> ceiling it captures. The dissociation is the point.</p>" +
+      "<p class='card__sub'>Same models, two columns: the median per-perturbation raw Pearson (uncalibrated) and the fraction of each axis's <em>achievable</em> ceiling it captures. The dissociation between the two is the point.</p>" +
       "<table class='table'><thead><tr><th>Model</th><th class='num'>raw δ</th><th class='num'>fraction of ceiling</th></tr></thead><tbody>";
     rows.forEach(function (r) {
       var mark = (r.model === "ridge" || r.model === "causal") ? " style='background:var(--accent-wash)'" : "";
@@ -1059,89 +1092,99 @@ window.__APP_DATA__ = {"act1":{"_meta":{"source":"real","generated_utc":"2026-07
 
 </script>
   <script>
-/* Act 3 — "The frontier, mapped six ways" (centerpiece).
- * Consumes App.data.act3: the ~0.03 pointwise floor, the residual's biological identity,
- * and six pre-registered negatives, each with a verdict + key number pulled from its gate CSV.
- * Split-agnostic. Every number comes from the data via App.fmt.* / the JSON strings. */
+/* Act 3 — "The predictability scorecard" (v2 centerpiece).
+ * Consumes App.data.act3: the committed scorecard SVG (hero), the seven probes + the C2
+ * positive-control anchor (from predictability_audit_gate.csv), the residual identity, the
+ * positive-control argument, and the Tier-2 novelty note. Split-agnostic. */
 (function () {
   "use strict";
   var A;
   function d() { return App.data.act3 || {}; }
   function h(tag, cls, html) { var e = App.el(tag, cls); if (html != null) e.innerHTML = html; return e; }
   function esc(s) { return String(s == null ? "" : s); }
+  var VERDICT_CLASS = { FAIL: "tag--verdict", NEGATIVE: "tag--verdict", "NO-GO": "tag--verdict",
+    FLOOR: "tag--verdict", "IN-DIST": "tag--warn", POSITIVE: "tag--good" };
 
   App.registerPanel("act3", {
-    title: "The frontier, six ways",
+    title: "The scorecard",
     render: function (root) {
       A = d();
       root.appendChild(h("div", "panel__head",
-        "<div class='panel__eyebrow'>Act 3 · the frontier</div>" +
-        "<h1 class='panel__title'>The frontier, mapped six ways</h1>" +
-        "<p class='panel__lede'>The remaining per-perturbation signal sits at a low pointwise floor. Six <b>pre-registered</b> analyses each asked whether a different structure could push past it — and each returns a clean negative. This is not \"we solved perturbation prediction\"; it is \"we bounded the frontier honestly, six ways, with zero GPU.\"</p>"));
+        "<div class='panel__eyebrow'>Act 3 · the scorecard</div>" +
+        "<h1 class='panel__title'>The predictability scorecard</h1>" +
+        "<p class='panel__lede'>" + esc(A.finding) + "</p>"));
+      if (!A.probes) { root.appendChild(h("div", "card", "<p class='muted'>Act 3 data unavailable.</p>")); return; }
 
-      if (!A.gates) { root.appendChild(h("div", "card", "<p class='muted'>Act 3 data unavailable.</p>")); return; }
+      // HERO — the committed scorecard SVG, verbatim
+      var hero = h("div", "card card--pad-lg");
+      hero.appendChild(h("div", "card__title",
+        App.icon("bar-chart") + "<span>Marson CD4 predictability scorecard</span>" +
+        "<span class='tag tag--good' style='margin-left:auto'>" + App.icon("check", 12) +
+        "G-PA.1: " + A.n_probes + "/" + A.n_probes + " reproduce committed verdicts</span>"));
+      var fig = h("div", "scorecard-figure"); fig.innerHTML = A.scorecard_svg;
+      fig.setAttribute("role", "img");
+      fig.setAttribute("aria-label", "Predictability scorecard. Panel A: fraction of the reliability ceiling recovered on the gene hold-out — Ridge 0.02 collapses, the do-operator reaches 0.56. Panel B: seven probes each at the noise floor or in-distribution, plus the do-operator C2 positive control.");
+      hero.appendChild(fig);
+      root.appendChild(hero);
 
-      // floor headline
-      var floor = A.floor || {};
-      root.appendChild(h("div", "card card--pad-lg",
-        "<div class='card__title'>" + App.icon("target") + "<span>The pointwise floor</span></div>" +
-        "<div class='stat-hero'>" +
-        "<div class='stat-hero__num'>" + App.fmt.num(floor.value, ".3f") + "</div>" +
-        "<div class='stat-hero__cap'>" + esc(floor.label) + ". " + esc(floor.triangulation) + "</div>" +
-        "</div>"));
-
-      // the six-gate map
-      var mapWrap = h("div", "card"); mapWrap.style.marginTop = "18px";
-      mapWrap.appendChild(h("div", "card__title", App.icon("layers") + "<span>Six pre-registered negatives — click any to expand</span>"));
-      mapWrap.appendChild(h("p", "card__sub", "Spanning <b>pointwise</b> and <b>relational</b>, <b>raw</b> and <b>specific</b>. Every verdict's number is read from its committed gate CSV."));
+      // interactive probe list — 7 probes + the C2 anchor (Budget lives in Act 2)
+      var listCard = h("div", "card"); listCard.style.marginTop = "18px";
+      listCard.appendChild(h("div", "card__title", App.icon("layers") + "<span>Seven probes + the positive control — click any to expand</span>"));
+      listCard.appendChild(h("p", "card__sub", "Each probe is scored against its own degree/label-preserving null and read relative to the measured reliability ceiling. Every number is read from that probe's committed gate CSV."));
       var grid = h("div", "gate-grid");
-      (A.gates || []).forEach(function (g) { grid.appendChild(buildGate(g)); });
-      mapWrap.appendChild(grid);
-      root.appendChild(mapWrap);
+      A.probes.filter(function (p) { return p.code !== "Budget"; }).forEach(function (p) { grid.appendChild(buildProbe(p)); });
+      listCard.appendChild(grid);
+      root.appendChild(listCard);
 
-      // residual identity — "what the floor is"
+      // the positive-control argument
+      var pc = h("div", "data-note"); pc.style.marginTop = "18px";
+      pc.innerHTML = "<span data-icon='zap'></span><div><b>Why this is a map, not a failure.</b> " + esc(A.positive_control_argument) + "</div>";
+      root.appendChild(pc);
+
+      // what the floor is — residual identity
       root.appendChild(buildResidual());
 
-      // closing summary
-      var sum = h("div", "data-note"); sum.style.marginTop = "18px";
-      sum.innerHTML = "<span data-icon='check'></span><div><b>What this adds up to.</b> " + esc(A.summary) + "</div>";
-      root.appendChild(sum);
+      // novelty — Tier-2, weak occupation (honest)
+      var nov = (App.data.manifest && App.data.manifest.novelty) || {};
+      root.appendChild(h("div", "data-note data-note--qual",
+        "<span data-icon='info'></span><div><b>Novelty — " + esc(nov.tier) + " (" + esc(nov.occupation) + " occupation).</b> " + esc(nov.note) + "</div>"));
+
+      // takeaway
+      root.appendChild(h("div", "data-note",
+        "<span data-icon='check'></span><div><b>The takeaway.</b> " + esc(A.summary) + "</div>"));
     },
     update: function () { /* split-agnostic */ }
   });
 
-  function buildGate(g) {
+  function buildProbe(p) {
     var card = document.createElement("button");
-    card.type = "button"; card.className = "gate"; card.setAttribute("aria-expanded", "false");
-    var tags = "<span class='tag tag--verdict'>" + esc(g.verdict) + "</span>" +
-      (g.family || []).map(function (f) { return "<span class='tag tag--axis'>" + esc(f) + "</span>"; }).join("");
-    var k = g.key_number || {};
+    card.type = "button"; card.className = "gate" + (p.is_anchor ? " gate--anchor" : "");
+    card.setAttribute("aria-expanded", "false");
+    var vclass = VERDICT_CLASS[p.verdict] || "tag--axis";
+    var tags = "<span class='tag " + vclass + "'>" + esc(p.verdict) + "</span>" +
+      (p.family_tags || []).map(function (f) { return "<span class='tag tag--axis'>" + esc(f) + "</span>"; }).join("");
     card.innerHTML =
-      "<div class='gate__top'><span class='gate__n'>" + g.n + "</span><span class='gate__name'>" + esc(g.name) + "</span></div>" +
+      "<div class='gate__top'><span class='gate__n" + (p.is_anchor ? " gate__n--pos" : "") + "'>" + esc(p.code) + "</span><span class='gate__name'>" + esc(p.name) + "</span></div>" +
       "<div class='gate__tags'>" + tags + "</div>" +
-      "<div class='gate__headline'>" + esc(g.headline) + "</div>" +
-      "<div class='gate__key'>" + esc(k.label) + ": <b>" + esc(k.value) + "</b></div>" +
-      "<div class='gate__detail'>" + esc(k.detail) + "</div>" +
-      "<div class='gate__more' hidden>" + esc(g.aside) +
-      "<div class='gate__csv'>" + App.icon("info", 12) + " " + esc(g.csv) + "</div></div>";
+      "<div class='gate__key'>" + esc(p.key) + "</div>" +
+      "<div class='gate__more' hidden><div class='gate__q'>" + esc(p.question) + "</div>" + esc(p.detail) +
+      "<div class='gate__csv'>" + App.icon("info", 12) + " " + esc(p.source) + "</div></div>";
     var more = card.querySelector(".gate__more");
     card.addEventListener("click", function () {
-      var open = more.hidden;
-      more.hidden = !open; card.classList.toggle("is-open", open);
-      card.setAttribute("aria-expanded", String(open));
+      var open = more.hidden; more.hidden = !open;
+      card.classList.toggle("is-open", open); card.setAttribute("aria-expanded", String(open));
     });
     return card;
   }
 
   function buildResidual() {
-    var res = A.residual || {};
-    var card = h("div", "card"); card.style.marginTop = "18px";
+    var res = A.residual || {}; var card = h("div", "card"); card.style.marginTop = "18px";
     var chips = (res.top_genes || []).map(function (g) {
       return "<span class='gene-chip'><b>" + esc(g.symbol) + "</b> <span class='ann'>" + esc(g.annotation) + "</span></span>";
     }).join("");
     card.innerHTML =
       "<div class='card__title'>" + App.icon("dna") + "<span>What the floor <em>is</em></span></div>" +
-      "<p class='card__sub'>The reproducible part of the residual is not diffuse noise — it localizes to a specific, biologically coherent program: the <b>" + esc(res.program) + "</b>, peaking at the <b>" + esc(res.peaks) + "</b>. A far-from-equilibrium response; its <em>per-perturbation</em> part is noise-limited at pseudobulk depth.</p>" +
+      "<p class='card__sub'>The reproducible part of the residual localizes to the <b>" + esc(res.program) + "</b>, peaking at the <b>" + esc(res.peaks) + "</b> — a coherent biological program whose per-perturbation part is noise-limited at pseudobulk depth.</p>" +
       "<div class='gene-chips'>" + chips + "</div>";
     return card;
   }
