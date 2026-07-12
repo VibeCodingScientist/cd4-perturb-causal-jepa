@@ -104,17 +104,42 @@ six negatives + one in-distribution result still registers the do-operator C2 as
 null cell means **"no signal here," not "no sensitivity"** — the instrument detects signal when signal
 exists. That is what turns a pile of negatives into a *calibrated predictability map*.
 
-## G-PA.2 — second-dataset port: **deferred → claim stays "characterization of Marson" (case study)**
-Not attempted, by design. A second dataset (candidate CausalBench RPE1/K562) does **not** ingest cheaply
-AFK, and cell lines are **structurally degenerate** for this suite: they have **no donors** (P5 inapplicable)
-and **no activation trajectory** (P4 inapplicable), and P7 would need a **fresh do-operator retrain + external
-edges** for that dataset — explicitly out of AFK scope (no retrain). Running only the applicable probes would
-require the ingested data we do not have here.
+## G-PA.2 — second-dataset port (Schmidt 2022): **the machinery ports (qualified); the floor finding is NOT re-tested**
+*Appendix, subordinate to the Marson scorecard above — which is unchanged. This is a modest, honestly-bounded
+upgrade: the audit **machinery** ports to a second primary-cell Perturb-seq dataset. It is **not** a claim that
+the narrow-recoverable-signal finding replicates.*
 
-**Consequence (honest):** the instrument claim is **not** yet earned. The word "instrument" requires a clean
-port; until one exists, the claim is **"a predictability characterization of the Marson CD4 dataset"** — a
-**case study (n=1)**. The port is future work. *(This does not block v2 — v2 stands on the Marson scorecard +
-reframe.)*
+**What ported.** The identical audit machinery — R1 per-perturbation reproducibility, R2 reliability ceiling,
+R3 relational structure — was run **with no retrain** on **Schmidt et al. 2022** (GEO GSE190604; primary human
+T cells, CRISPRa Perturb-seq, 73 selected screen-hit genes), on **Schmidt's own** recomputed floor. All three
+probes reproduce **above their permutation floor** (`p ≤ 1/501`, B=500 — reported as the permutation floor, not
+a precise p):
+
+| Probe (Schmidt's own floor) | nostim | stim | vs Schmidt's own null |
+|---|---|---|---|
+| R1 reproducibility (cross-**well**) | 0.713 | 0.754 | null ≈ 0, p ≤ 1/501 |
+| R2 reliability ceiling (split-half over cells, Spearman-Brown) | 0.925 | 0.933 | — |
+| R3 relational-object S (target×target, cross-well split) | 0.863 | 0.926 | null 0.10 / 0.04, p ≤ 1/501 |
+
+**The upgrade:** *"the instrument runs on a second primary-cell Perturb-seq dataset"* — **not** *"the finding
+replicates."*
+
+**Four bounds (load-bearing, not softened):**
+- **(a) cross-well ≠ cross-donor — the decisive one.** R1 is **cross-well (technical replicate)**
+  reproducibility. Marson's **0.03 floor is cross-donor (biological)**. Schmidt's public form has **no donor
+  demux**, so the **cross-donor floor was NOT re-tested**. `0.71` and `0.03` are on **different axes** — not a
+  comparison, and no evidence the floor finding generalizes.
+- **(b) same lab** — Schmidt and our Marson dataset are the same consortium (Marson); **not** an independent group.
+- **(c) CRISPRa vs our CRISPRi** — a different perturbation modality (gain- vs loss-of-function).
+- **(d) 3 of 7 probes** — P4 (trajectory) and P5 (donor) are **N/A by construction on this data form**
+  (2 pooled states; no donor labels); P7 (external causal) is deferred (needs a do-operator retrain).
+
+**The limitation as the next step:** **floor-generalization is untested.** The experiment that would test it is
+a **donor-demuxed second dataset** (so cross-donor reproducibility is computable) — a concrete, deferred next
+step, not a hidden gap.
+
+*(This is additive: the Marson seven-probe scorecard, the six-negatives finding, and the C2 positive control
+above are unchanged. Full method + provenance: `GPA2_PORT.md`; numbers: `results/gpa2_scorecard.csv`.)*
 
 ## Honest ceilings
 1. **Evaluation/methods contribution, not a new predictor.** Wins on dataset/causal-validity assessment and
