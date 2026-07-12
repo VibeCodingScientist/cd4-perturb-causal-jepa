@@ -1,4 +1,56 @@
-<svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+#!/usr/bin/env python
+"""Generate figures/predictability_scorecard.svg — Panel A is DATA-DRIVEN from the committed
+results/fraction_of_ceiling.csv (gene hold-out, frac_of_ceiling_median), so every bar is on the same unit
+(fraction of the measured reliability ceiling) and cannot silently drift to a raw-delta value. Panel B (the
+seven-probe verdict scorecard) is a verified static template. Stdlib-only.
+
+Run:  python scripts/make_scorecard_figure.py   ->  figures/predictability_scorecard.svg
+"""
+import csv, os
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+X0, SCALE = 300, 600            # x origin; 600 px = fraction 1.0 (ceiling line at x=900)
+
+# display order (top→bottom) with y, bar colour, bold flag
+ROWS = [
+    ("ridge",       "Ridge (linear)",       192, "#b04a4a", False),
+    ("fcn",         "FCN (nonlinear)",       220, "#9aa1ab", False),
+    ("noncausal",   "Non-causal twin",       248, "#7e94c4", False),
+    ("jepa_only",   "JEPA-only",             276, "#9aa1ab", False),
+    ("jepa_causal", "JEPA + causal",         304, "#3f9e6b", False),
+    ("causal",      "Do-operator (causal)",  332, "#2e8b57", True),
+]
+
+
+def frac_of_ceiling_gene():
+    out = {}
+    with open(os.path.join(ROOT, "results", "fraction_of_ceiling.csv")) as f:
+        for r in csv.DictReader(f):
+            if r["split"] == "gene":
+                out[r["model"]] = float(r["frac_of_ceiling_median"])
+    return out
+
+
+def panel_a(frac):
+    parts = ['  <g font-size="13">']
+    for model, name, y, colour, bold in ROWS:
+        v = frac[model]
+        w = v * SCALE
+        lblcol = colour if (bold or model in ("ridge", "jepa_causal")) else "#6b7280"
+        wt = ' font-weight="700"' if bold else ""
+        namewt = ' font-weight="700"' if bold else ""
+        namecol = "#12151a" if bold else "#3b424c"
+        vtext = f"{v:.2f} — collapses" if model == "ridge" else f"{v:.2f}"
+        lblwt = ' font-weight="700"' if (bold or model == "ridge") else ""
+        parts.append(f'    <!-- {model} {v:.4f} of ceiling (results/fraction_of_ceiling.csv gene) -->')
+        parts.append(f'    <text x="290" y="{y+11}" text-anchor="end" fill="{namecol}"{namewt}>{name}</text>')
+        parts.append(f'    <rect x="{X0}" y="{y}" width="{w:.1f}" height="16" rx="2" fill="{colour}"/>')
+        parts.append(f'    <text x="{X0+w+8:.0f}" y="{y+13}" fill="{lblcol}"{lblwt}>{vtext}</text>')
+    parts.append('  </g>')
+    return "\n".join(parts)
+
+
+HEADER = '''<svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
   <rect x="0" y="0" width="1000" height="760" fill="#ffffff"/>
   <text x="40" y="46" font-size="26" font-weight="700" fill="#12151a">Marson CD4 Perturb-seq — Predictability Scorecard</text>
   <text x="40" y="72" font-size="14.5" fill="#4a515b">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling. An evaluation/methods reframe of validated content — no new model.</text>
@@ -13,34 +65,9 @@
     <text x="300" y="420" text-anchor="middle">0</text>
     <text x="600" y="420" text-anchor="middle">0.5</text>
     <text x="900" y="420" text-anchor="middle">1.0 = ceiling</text>
-  </g>
-  <g font-size="13">
-    <!-- ridge 0.0169 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="203" text-anchor="end" fill="#3b424c">Ridge (linear)</text>
-    <rect x="300" y="192" width="10.1" height="16" rx="2" fill="#b04a4a"/>
-    <text x="318" y="205" fill="#b04a4a" font-weight="700">0.02 — collapses</text>
-    <!-- fcn 0.1600 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="231" text-anchor="end" fill="#3b424c">FCN (nonlinear)</text>
-    <rect x="300" y="220" width="96.0" height="16" rx="2" fill="#9aa1ab"/>
-    <text x="404" y="233" fill="#6b7280">0.16</text>
-    <!-- noncausal 0.3008 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="259" text-anchor="end" fill="#3b424c">Non-causal twin</text>
-    <rect x="300" y="248" width="180.5" height="16" rx="2" fill="#7e94c4"/>
-    <text x="489" y="261" fill="#6b7280">0.30</text>
-    <!-- jepa_only 0.3867 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="287" text-anchor="end" fill="#3b424c">JEPA-only</text>
-    <rect x="300" y="276" width="232.0" height="16" rx="2" fill="#9aa1ab"/>
-    <text x="540" y="289" fill="#6b7280">0.39</text>
-    <!-- jepa_causal 0.5519 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="315" text-anchor="end" fill="#3b424c">JEPA + causal</text>
-    <rect x="300" y="304" width="331.1" height="16" rx="2" fill="#3f9e6b"/>
-    <text x="639" y="317" fill="#3f9e6b">0.55</text>
-    <!-- causal 0.5550 of ceiling (results/fraction_of_ceiling.csv gene) -->
-    <text x="290" y="343" text-anchor="end" fill="#12151a" font-weight="700">Do-operator (causal)</text>
-    <rect x="300" y="332" width="333.0" height="16" rx="2" fill="#2e8b57"/>
-    <text x="641" y="345" fill="#2e8b57" font-weight="700">0.56</text>
-  </g>
-  <path d="M 484 372 L 484 366 L 633 366 L 633 372" fill="none" stroke="#2e8b57" stroke-width="1.3"/>
+  </g>'''
+
+FOOTER = '''  <path d="M 484 372 L 484 366 L 633 366 L 633 372" fill="none" stroke="#2e8b57" stroke-width="1.3"/>
   <text x="558" y="390" text-anchor="middle" font-size="12.5" fill="#2e8b57" font-weight="700">C2 do-operator effect = causal − twin (+0.162 gene, Pearson-δ)</text>
   <text x="40" y="470" font-size="16" font-weight="700" fill="#12151a">B · Seven probes — where the recoverable signal is (each vs its own degree/label-preserving null)</text>
   <g font-size="13">
@@ -72,4 +99,22 @@
   </g>
   <text x="40" y="736" font-size="13.5" fill="#3b424c">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests: six probes sit at the floor, the one accuracy</text>
   <text x="40" y="753" font-size="13.5" fill="#3b424c">positive (C2) is <tspan font-weight="700">in-distribution, not causal</tspan>. The C2 anchor proves the nulls mean “no signal,” not “no sensitivity.”</text>
-</svg>
+</svg>'''
+
+
+def main():
+    frac = frac_of_ceiling_gene()
+    for model, *_ in ROWS:
+        assert model in frac, f"{model} missing from fraction_of_ceiling.csv"
+    svg = HEADER + "\n" + panel_a(frac) + "\n" + FOOTER + "\n"
+    out = os.path.join(ROOT, "figures", "predictability_scorecard.svg")
+    with open(out, "w", encoding="utf-8") as f:
+        f.write(svg)
+    print("wrote", out)
+    print("Panel-A bars (fraction of ceiling, gene) from results/fraction_of_ceiling.csv:")
+    for model, name, *_ in ROWS:
+        print(f"  {name:22s} {frac[model]:.4f}")
+
+
+if __name__ == "__main__":
+    main()
