@@ -1,12 +1,12 @@
-# The Predictability Audit — a scorecard reframe of the Marson CD4 Perturb-seq work (candidate v2)
+# The Predictability Audit — a scorecard reframe of the Marson CD4 Perturb-seq work (v2 — submission of record)
 
-*Developer 2, autonomous, AFK-safe. This prepares a **candidate v2** submission: an honest reframe of
-everything already validated — the seven pre-registered probes + the predictability budget + the
-do-operator positive control — assembled into a **dataset predictability scorecard**. It is **not an eighth
-model** (seven investigations proved that model does not exist at this depth); it is an **evaluation/methods
-reframe** of existing, committed, validated content. The frozen submission (`submission-fallback-v1` /
-`6476670`) is byte-untouched. **One strategic decision is left for the lead: promote v2 or keep v1** (see
-the end). Nothing here is merged; this is a PR-for-review on `predictability-audit`.*
+*Developer 2. This is the **v2 submission of record**: an honest reframe of everything already validated —
+the seven pre-registered probes + the predictability budget + the do-operator positive control — assembled
+into a **dataset predictability scorecard**. It is **not an eighth model** (seven investigations proved that
+model does not exist at this depth); it is an **evaluation/methods reframe** of existing, committed,
+validated content. **v2 was promoted** (PR #12 merged to `main`; release `submission-v2` @ `a8878d5` cut as
+the submission of record); the frozen **v1** (`submission-fallback-v1` / `6476670`) is kept byte-untouched as
+the reversible fallback.*
 
 ---
 
@@ -164,16 +164,14 @@ above are unchanged. Full method + provenance: `GPA2_PORT.md`; numbers: `results
 
 ---
 
-## The one decision left for the lead: **promote v2, or keep v1?**
+## The decision (resolved): **v2 promoted**
 
-**Recommendation: prepare v2 and (softly) lean toward promoting it — but the call is yours.** Rationale:
-- **For promoting v2:** it is a **strictly better-framed submission of the same validated content.** It turns
-  seven negatives + a positive control into one coherent, novel-at-Tier-2 contribution — a *predictability
-  scorecard* — on the exact axis the field's own papers ask for ("Virtual Cells as Causal World Models" calls
-  for causal-validity metrics; nobody has built the dataset audit). G-PA.1 is faithful; the frozen v1 remains
-  the safe fallback.
-- **For keeping v1:** if the hackathon strictly rewards accuracy, or if Tier-2 (not "first") + n=1 (case
-  study, no clean instrument port) is judged too thin to outweigh v1's concrete do-operator result.
+v2 was **promoted** and released as the submission of record. Rationale: it is a **strictly better-framed
+submission of the same validated content** — it turns seven results + a positive control into one coherent,
+novel-at-Tier-2 contribution (a *predictability scorecard*) on the exact axis the field's own papers ask for
+("Virtual Cells as Causal World Models" calls for causal-validity metrics; nobody had built the dataset
+audit). G-PA.1 is faithful; the second-dataset port (§ G-PA.2) shows the machinery ports (not floor
+generalization); v1 remains the frozen, reversible fallback.
 
-**This run does not make that call.** v2 is prepared on `predictability-audit` as a PR-for-review; the frozen
-tag `6476670` and CP2 are byte-untouched; no v2 release is cut; nothing is merged.
+**State:** PR #12 merged to `main`; release `submission-v2` @ `a8878d5` is the submission of record; the
+frozen tag `submission-fallback-v1` / `6476670` and CP2 are byte-untouched.

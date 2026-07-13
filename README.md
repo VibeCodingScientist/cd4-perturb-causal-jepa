@@ -15,9 +15,21 @@ JEPA claim are three cells of that single matrix. Ridge / TabPFN / PseudoBulk-FC
 Arc State are external reference points; a Value-of-Information (VOI) layer turns
 model disagreement into a sample-efficient experimental-design recommendation.
 
-The full technical specification is [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN.md).
+The full technical specification is [`UNIFIED_BUILD_PLAN.md`](docs/UNIFIED_BUILD_PLAN.md).
 The pre-registered hypotheses are in [`hypotheses.md`](hypotheses.md) and were
 committed **before** any model saw data.
+
+> ### Submission of record — v2: The Predictability Audit
+> The promoted submission reframes this work as a **dataset predictability scorecard** — the seven
+> pre-registered probes + the predictability budget + the do-operator positive control, each scored against a
+> degree/label-preserving null and calibrated to the measured reliability ceiling. It is an
+> **evaluation/methods contribution** (novelty **Tier-2**), **not a new predictor** — and it is honest to its
+> bounds: the do-operator's one accuracy positive (C2) is **in-distribution, not causal** (it does not
+> replicate on held-out external causal edges), and a second-dataset port shows the *machinery* ports, **not**
+> that the floor finding generalizes. Full story: [`PREDICTABILITY_AUDIT.md`](PREDICTABILITY_AUDIT.md).
+>
+> **Releases:** `submission-v2` (@ `a8878d5`) is the submission of record; `submission-fallback-v1`
+> (@ `6476670`) is the frozen, reversible fallback.
 
 ## Results at a glance
 
@@ -26,7 +38,7 @@ committed **before** any model saw data.
   and **+0.162** on the gene hold-out ([`results/benchmark_table.csv`](results/benchmark_table.csv):
   causal 0.344/0.368 vs non-causal 0.226/0.206). On a **fraction-of-ceiling** axis (the honest metric —
   raw δ is baseline-dominated) the do-operator reaches **0.55** of the achievable gene-axis signal,
-  where a linear model collapses to **0.02** ([`BUDGET.md`](BUDGET.md)).
+  where a linear model collapses to **0.02** ([`BUDGET.md`](docs/BUDGET.md)).
 - **The frontier is mapped, honestly.** Six *pre-registered* CPU gates asked whether the
   per-perturbation prediction floor (~**0.03** cross-donor) can be broken — causal-matrix, fluctuation,
   single-cell SNR, trajectory-geometry, donor-structure, relational structure. **All six are clean
@@ -117,27 +129,24 @@ headless box (see RUNBOOK); the JEPA cells of the 2×2 (C3) are CP2.
 
 ```
 cd4-perturb-causal-jepa/
-  core/
-    contract.py             # paths + schemas both worktrees code against (frozen FIRST)
-    data.py                 # backed h5ad reads, QC, HVG, subsampling
-    pseudobulk.py           # (pert,cond,donor) mean profiles + deltas
-    features.py             # ESM-2 + network/GO priors, DEG-frequency features
-    split.py                # writes/loads split_manifest.json, verifies SHA
-    eval.py                 # FROZEN metrics + mode-collapse detector
-    models/
-      do_attention.py       # corrected DoAttention (§7d)
-      gene_tokens.py         # CisTransCell-style gene-token encoder (§7d)
-      causal_cistransformer.py
-      jepa.py               # Cell-JEPA-style pretraining (§7e) — Developer 2
-      baselines.py          # Ridge, TabPFN, PseudoBulk FCN
-    voi.py                  # ensemble-disagreement VOI — Developer 2
-  results/                  # benchmark_table.csv (committed)
-  figures/                  # demo figures (committed)
-  hypotheses.md             # pre-registration (committed before Day 1)
-  split_manifest.json       # immutable split (committed)
-  gpu_queue.py              # single-GPU serial job scheduler (§6)
-  Snakefile
-  environment.yml
+  README.md                    # this file
+  PREDICTABILITY_AUDIT.md      # v2 submission of record — the predictability scorecard
+  GPA2_PORT.md                 # second-dataset port (Schmidt 2022) — machinery ports, qualified
+  RESULTS.md                   # detailed CP1/CP2 results
+  SUBMISSION_FALLBACK.md       # v1 frozen-fallback summary
+  hypotheses.md                # pre-registration (committed before Day 1)
+  predictability_audit/        # run_audit() — the scorecard package (stdlib-only, no retrain)
+  core/                        # frozen contract, data, pseudobulk, features, split, eval, models/, voi
+  scripts/                     # gate + build scripts (run_cp1, fusion_*, gpa2_*, make_scorecard_figure, …)
+  mechanism/                   # Â_C + fluctuation (C-NL) probes + findings
+  results/                     # committed gate CSVs (the source of truth)
+  figures/                     # committed figures (predictability_scorecard.svg, …)
+  explorer/                    # offline demo bundle
+  docs/                        # the full arc — BUDGET, PHASEB, DONOR, RELATIONAL, TRAJECTORY,
+                               #   FUSION_GATES, CP2_SUMMARY, RUNBOOK, HANDOFF, UNIFIED_BUILD_PLAN, DEV2_NOTES
+  tests/                       # unit + regression tests
+  split_manifest.json · split/ # immutable split + frozen HVG list
+  Snakefile · environment.yml · requirements-dev.txt · gpu_queue.py · run_fusion_pipeline.sh
 ```
 
 **Shared artifacts live outside git** in `DATA_ROOT` (default `~/cd4-perturb-data/`,
@@ -203,14 +212,14 @@ negatives are reproducible look-ups, not recollections.
 
 | Analysis | One-line verdict | Pointer |
 |---|---|---|
-| **Primary — CP1/CP2** | do-operator (C2) confirmed: causal beats its non-causal twin **+0.118 condition / +0.162 gene**; JEPA 2×2 + VOI | [`RESULTS.md`](RESULTS.md), [`CP2_SUMMARY.md`](CP2_SUMMARY.md), `results/benchmark_table.csv` |
-| **Predictability budget** | benchmark is **not noise-saturated**; bucket C (structured, gene ≈0.76 of ceiling) is real (cross-donor perm p<0.001); report fraction-of-ceiling per axis | [`BUDGET.md`](BUDGET.md) |
-| **Residual localization + SNR pre-check** | the unrecovered residual **is the transient activation-cytokine program** (IFNG/IL2/CSF2/chemokines, peaks Stim8hr); the per-perturbation frontier is a **confirmed noise floor** at pseudobulk depth — single-cell resolution would not fix it (no 130 GB spent) | [`PHASEB.md`](PHASEB.md) |
+| **Primary — CP1/CP2** | do-operator (C2) confirmed: causal beats its non-causal twin **+0.118 condition / +0.162 gene**; JEPA 2×2 + VOI | [`RESULTS.md`](RESULTS.md), [`CP2_SUMMARY.md`](docs/CP2_SUMMARY.md), `results/benchmark_table.csv` |
+| **Predictability budget** | benchmark is **not noise-saturated**; bucket C (structured, gene ≈0.76 of ceiling) is real (cross-donor perm p<0.001); report fraction-of-ceiling per axis | [`BUDGET.md`](docs/BUDGET.md) |
+| **Residual localization + SNR pre-check** | the unrecovered residual **is the transient activation-cytokine program** (IFNG/IL2/CSF2/chemokines, peaks Stim8hr); the per-perturbation frontier is a **confirmed noise floor** at pseudobulk depth — single-cell resolution would not fix it (no 130 GB spent) | [`PHASEB.md`](docs/PHASEB.md) |
 | **Mechanism line** | Â_C (spikes #1/#2) **FAIL** under P≪G; C-NL third-moment gate **positive** on the simulator; C-NL real-data **NEGATIVE** (third moment orthogonal, 12/12 strata) | [`mechanism/`](mechanism/), [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md) |
-| **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](TRAJECTORY.md) |
-| **Donor-structured recovery** | **NO-GO** — within-donor same-gene concordance is real but at noise-floor magnitude (Δ≈0.017); donor-*averaging* beats donor-*conditioning* (0.034 vs 0.016); the floor is real, reversal refuted on the dataset's own 2-guide design | [`DONOR.md`](DONOR.md) |
-| **Relational-object recovery** | **FAIL** — relational structure is floored too: no specific-space object (similarity/loadings/rank) reaches 0.30 (S 0.008, best loading factor 0.17, high-effect subset 0.037). Raw-space S ≈ 0.9 is a *constant-cosine artifact*, not a reproducible pattern (repo measures 0.007). The floor is object-general | [`RELATIONAL.md`](RELATIONAL.md) |
-| **External causal-edge validation (C-FUSE 1b, GPU)** | **FAIL (causal-specificity)** — the do-operator recovers held-out external edge *direction* above null (9/9 regulators >0.5, binom p=0.004) but with **no** advantage over its non-causal twin (causal−twin **−0.010**, regulator cluster-bootstrap CI [−0.013, −0.005]); the within-dataset C2 edge is **in-distribution, not causal**. Signal rides Freimer *indirect* KO-DE edges; the 45 *direct* Weinstock (LLCB) edges sit at chance (0.400, p=0.94). Data-integrity **C2 positive control passed** (restored data verified real: +0.106/+0.156 vs committed +0.118/+0.162) | [`FUSION_GATES.md`](FUSION_GATES.md) |
+| **Trajectory-coupling** | **clean negative** — recoverability is *not* explained by trajectory-geometry (partial ρ ≈ 0, both splits), and the reduced scalar target sits at the noise floor; no build ran | [`TRAJECTORY.md`](docs/TRAJECTORY.md) |
+| **Donor-structured recovery** | **NO-GO** — within-donor same-gene concordance is real but at noise-floor magnitude (Δ≈0.017); donor-*averaging* beats donor-*conditioning* (0.034 vs 0.016); the floor is real, reversal refuted on the dataset's own 2-guide design | [`DONOR.md`](docs/DONOR.md) |
+| **Relational-object recovery** | **FAIL** — relational structure is floored too: no specific-space object (similarity/loadings/rank) reaches 0.30 (S 0.008, best loading factor 0.17, high-effect subset 0.037). Raw-space S ≈ 0.9 is a *constant-cosine artifact*, not a reproducible pattern (repo measures 0.007). The floor is object-general | [`RELATIONAL.md`](docs/RELATIONAL.md) |
+| **External causal-edge validation (C-FUSE 1b, GPU)** | **FAIL (causal-specificity)** — the do-operator recovers held-out external edge *direction* above null (9/9 regulators >0.5, binom p=0.004) but with **no** advantage over its non-causal twin (causal−twin **−0.010**, regulator cluster-bootstrap CI [−0.013, −0.005]); the within-dataset C2 edge is **in-distribution, not causal**. Signal rides Freimer *indirect* KO-DE edges; the 45 *direct* Weinstock (LLCB) edges sit at chance (0.400, p=0.94). Data-integrity **C2 positive control passed** (restored data verified real: +0.106/+0.156 vs committed +0.118/+0.162) | [`FUSION_GATES.md`](docs/FUSION_GATES.md) |
 
 **Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
 bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from
@@ -252,7 +261,7 @@ condition), **A** linear-explainable, and **C** structured residual, on the eval
 ceiling is far from saturated; bucket C is large on the gene axis (≈0.76) and **real** — the
 perturbation-specific residual reproduces across donors ~60–100× above a shuffled-label null (perm
 p<0.001). The do-operator recovers ~56% of it; ~44% is a located gap. Reframes the benchmark as
-**fraction-of-ceiling, per axis**. Full readout: [`BUDGET.md`](BUDGET.md).
+**fraction-of-ceiling, per axis**. Full readout: [`BUDGET.md`](docs/BUDGET.md).
 
 ### Residual localization + single-cell SNR pre-check
 
@@ -263,7 +272,7 @@ program; the *per-perturbation* residual is noise-limited at pseudobulk (cross-d
 pre-registered SNR pre-check asked whether single-cell resolution would recover it and found **no** —
 single-cell adds no cells (pseudobulk is sufficient for the mean); reaching a usable floor needs ~12×
 cells or ~8% concentration, projected best-case ~0.10. A **confirmed noise floor**, reached with zero
-GPU/egress. Full readout: [`PHASEB.md`](PHASEB.md).
+GPU/egress. Full readout: [`PHASEB.md`](docs/PHASEB.md).
 
 ### Trajectory-coupling (clean negative)
 
@@ -274,7 +283,7 @@ partial Spearman(R,TC | magnitude, reliability) = **+0.007 (condition), +0.034 (
 (bar was |ρ|≥0.3) — 1D and 2D; and the scalar target reproduces at ~0.07, at the noise floor (random-axis
 null 0.03). Predictability is **not** a trajectory-geometry property here; no build ran. The gate projects
 onto a *measured* axis only — it fits **no** dynamical model (3 timepoints underdetermine a vector field).
-Full readout: [`TRAJECTORY.md`](TRAJECTORY.md).
+Full readout: [`TRAJECTORY.md`](docs/TRAJECTORY.md).
 
 ### Donor-structured recovery (fifth clean negative)
 
@@ -288,7 +297,7 @@ survives composition-correction) — real target-specific biology, but ~8× belo
 noise-floor magnitude. **G-D.2:** donor-conditioned recovery (0.016) is beaten by donor-*averaging*
 (0.034) and even wrong-donor (0.024) — donor-conditioning gives *negative* gain. The "0.48" was a
 noise-*model* estimate, not empirical; the 16× gap **inverts** (averaging helps). The floor is real;
-the reversal is refuted. No build (G13 unlicensed). Full readout: [`DONOR.md`](DONOR.md).
+the reversal is refuted. No build (G13 unlicensed). Full readout: [`DONOR.md`](docs/DONOR.md).
 
 ### Relational-object recovery (sixth clean negative)
 
@@ -306,7 +315,7 @@ S reproducibility is **0.007**, not the ~0.9 a shared-program tautology would su
 the constant high *baseline* of raw cosines (all perturbations point toward the shared program), not a
 reproducible *pattern*. G-R.2 (known-regulator recovery) was gated on a pass and not run; the build
 (G14) is unlicensed. The frontier's noise floor is **object-general** — pointwise *and* relational, raw
-*and* specific, whole-population *and* high-effect. Full readout: [`RELATIONAL.md`](RELATIONAL.md).
+*and* specific, whole-population *and* high-effect. Full readout: [`RELATIONAL.md`](docs/RELATIONAL.md).
 
 ## License
 

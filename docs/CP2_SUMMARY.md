@@ -6,8 +6,8 @@ hold-out-clean gene-split re-run is finishing (see §6); the primary (condition)
 result below is final. Written honest-first — every pre-registered detector flag and
 confound is surfaced.
 
-Read alongside: [`HANDOFF.md`](HANDOFF.md) (CP1), [`RESULTS.md`](RESULTS.md) (detail),
-[`hypotheses.md`](hypotheses.md) (pre-registration), [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN.md).
+Read alongside: [`HANDOFF.md`](HANDOFF.md) (CP1), [`RESULTS.md`](../RESULTS.md) (detail),
+[`hypotheses.md`](../hypotheses.md) (pre-registration), [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN.md).
 
 ---
 
@@ -46,7 +46,7 @@ Pearson-δ on top-50 DEGs (higher better):
 
 ### ⚠️ Essential caveat — the pre-registered mode-collapse detector
 All four transformer cells exceed the 0.4 discrimination threshold (perturbench_rank:
-causal 0.457, noncausal 0.483, jepa_causal 0.460, jepa_only 0.482 → all flagged red).
+causal 0.457, noncausal 0.483, jepa_causal 0.460, jepa_only 0.474 → all flagged red).
 **Ridge is the only non-collapsed model (0.365) and also the Pearson-δ winner (0.384 >
 0.344).** Honest reading: *the do-mask improves a model that still fails perturbation
 discrimination*; ridge's function/network priors win raw accuracy. This is exactly the
@@ -86,7 +86,7 @@ pre-registered "priors win accuracy, the do-operator isolates the intervention" 
   `scripts/cp2_finalize.py`.
 - `Snakefile` — CP2 rules wired (`jepa`, `jepa_finetune`, `jepa_cells`, `cp2`).
 - `results/benchmark_table.csv` (all 12 rows), `figures/figure{1,2,3,4}.png`,
-  [`RESULTS.md`](RESULTS.md). **~60 tests green.**
+  [`RESULTS.md`](../RESULTS.md). **~60 tests green.**
 
 ## 6. Clean gene-holdout re-run — DONE
 

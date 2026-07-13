@@ -4,8 +4,8 @@
 `github.com/VibeCodingScientist/cd4-perturb-causal-jepa`. This doc is the single place to get
 oriented: what's built, the result, how it reproduces, and exactly what Developer 2 picks up.
 
-Read alongside: [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN.md) (spec), [`README.md`](README.md)
-(overview + results), [`hypotheses.md`](hypotheses.md) (pre-registration), [`RUNBOOK.md`](RUNBOOK.md)
+Read alongside: [`UNIFIED_BUILD_PLAN.md`](UNIFIED_BUILD_PLAN.md) (spec), [`README.md`](../README.md)
+(overview + results), [`hypotheses.md`](../hypotheses.md) (pre-registration), [`RUNBOOK.md`](RUNBOOK.md)
 (one-command reproduction).
 
 ---
@@ -158,27 +158,27 @@ The eval harness, split, features, and encoder are frozen — build against them
 
 ## 8. Supplementary — mechanism recovery (negative result)
 
-Self-contained CPU-only study in [`mechanism/`](mechanism/) — does not touch any CP1/CP2 file. Tests
+Self-contained CPU-only study in [`mechanism/`](../mechanism/) — does not touch any CP1/CP2 file. Tests
 whether explicit per-context causal-matrix (`Â_C`) estimation beats correlation baselines for
 cross-context transportability. **Result: FAIL under `P≪G`**, in both a linear/single-perturbation and a
 nonlinear/double-perturbation regime; reported honestly with pre-registered bars. The core finding is
 *why* correlation is hard to beat (Lyapunov sufficiency of the control covariance), plus a standalone
 result that the linear transportability condition degrades AUROC 1.00 → 0.88 under nonlinearity.
 Reproduce: `python run_c4.py && python eval.py && python sensitivity.py` (spike 1);
-`python run_spike2.py && python spike2_diag.py` (spike 2). Full readout: [`mechanism/README.md`](mechanism/README.md).
+`python run_spike2.py && python spike2_diag.py` (spike 2). Full readout: [`mechanism/README.md`](../mechanism/README.md).
 
 A third probe — the **C-NL gate** (`python run_cnl_gate.py`) — is the **positive** of the line: on ground
 truth the baseline **third moment predicts the second-order response covariance provably misses** (ΔR²
 ≈ +0.6–0.75, CI excluding 0; survives to 1,000 cells with NB emission on). The term is small (~3–4%) but
 structured; the go/no-go is sizing the analogous residual on real CD4 (within-donor, stratified by
-effect size — the large-effect bin is decision-relevant). Readout: [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).
+effect size — the large-effect bin is decision-relevant). Readout: [`mechanism/FINDINGS_CNL.md`](../mechanism/FINDINGS_CNL.md).
 
 That real-data go/no-go is **done, and the line is closed as a negative**: across 4 donors × 3 states
 (16,188 perturbations, CIPHER-exact raw counts) the baseline third moment is **orthogonal** to the
 first-order residual — ΔR² +0.0000 in every stratum (jackknife 95% CI [−0.0000, +0.0000]), the feature
 well-formed throughout, so orthogonality rather than weakness. Room exists (first-order residual ~91%,
 worse under stimulation) but the third moment fills none of it → **no-go on a third-moment closed-form
-for real CD4**. Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
+for real CD4**. Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](../mechanism/FINDINGS_CNL_REALDATA.md).
 The three-stage arc (spikes FAIL → simulator gate LIVE → real-data NEGATIVE) is the closed mechanism line.
 
 ## 9. Developer 3 — explorer (**MERGED to main**, tracks v2 — The Predictability Audit)

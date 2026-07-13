@@ -112,7 +112,8 @@ Per-perturbation do-operator edge `C2 = causal − non-causal`, split by reliabi
   (+0.141 vs +0.022; corr +0.29) and beats Ridge by +0.37. Concentrating on high-reliability
   perturbations is the signature of a model recovering **real reproducible bucket-C structure**,
   not fitting noise. On the ceiling scale it recovers ≈ 0.43 of 0.78 → **~56% of the achievable
-  gene signal that no linear model touches.**
+  gene signal** (fraction of the reliability ceiling); measured against the structured bucket-C residual
+  that no linear model touches, it recovers **~54%** (0.544, [`phaseB_recovery.csv`](../results/phaseB_recovery.csv)).
 - **Condition axis:** the do-operator adds little (+0.026) and *loses* to Ridge (−0.069) — when
   the signal is linear, the do-mask buys nothing. Its value is specifically the **cross-gene
   structured** regime.

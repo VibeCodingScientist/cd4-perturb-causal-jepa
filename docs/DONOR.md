@@ -42,7 +42,7 @@ effect (shared program removed), pooled over conditions:
 **target-specific biology** (independent guides of the same gene agree above chance). **But its
 magnitude is at the noise floor:** Δ ≈ 0.014–0.020 is **~8× below the pre-registered Δ ≥ 0.15 GO bar**,
 and the absolute same-gene concordance (~0.013) means two independent guides share only ~1% of their
-specific effect. Not "batch" (batch excluded), not underpowered (15–21k same-gene pairs/donor), not
+specific effect. Not "batch" (batch excluded), not underpowered (9–21k same-gene pairs/donor), not
 composition (survives) — it is **real biology at noise-floor magnitude.**
 
 ## G-D.2 — donor-conditioning recovery: **NO-GO**
