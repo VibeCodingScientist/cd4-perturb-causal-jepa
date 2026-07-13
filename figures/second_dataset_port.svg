@@ -1,0 +1,37 @@
+<svg viewBox="0 0 820 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Second-dataset port to Schmidt 2022: three model-free probes reproduce above their null on Schmidt's own floor; the machinery ports, but R1 is cross-well technical replicate not the cross-donor biological floor, so the floor finding is not re-tested." font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<rect x="0" y="0" width="820" height="470" fill="#ffffff"/>
+<text x="40" y="44" font-size="22" font-weight="700" fill="#12151a">Second-dataset port (Schmidt 2022) — the audit machinery ports (qualified)</text>
+<text x="40" y="70" font-size="13.5" fill="#4a515b">Identical probes + nulls, no retrain, on Schmidt's OWN recomputed floor (primary human T, CRISPRa, 73 genes). All clear their permutation floor (p ≤ 1/501).</text>
+<line x1="90" y1="130" x2="90" y2="330" stroke="#d5dae1"/>
+<line x1="90" y1="330" x2="470" y2="330" stroke="#c9d0da"/>
+<text x="84" y="134.0" text-anchor="end" font-size="11.5" fill="#8a8f98">1.0</text>
+<text x="84" y="234.0" text-anchor="end" font-size="11.5" fill="#8a8f98">0.5</text>
+<text x="84" y="334" text-anchor="end" font-size="11.5" fill="#8a8f98">0</text>
+<rect x="300" y="96" width="12" height="12" rx="2" fill="#3f9e6b"/><text x="318" y="106" font-size="12" fill="#5a616b">nostim</text>
+<rect x="380" y="96" width="12" height="12" rx="2" fill="#2e8b57"/><text x="398" y="106" font-size="12" fill="#5a616b">stim</text>
+<rect x="120" y="187.4" width="42" height="142.6" rx="2" fill="#3f9e6b"/><text x="141" y="181.4" text-anchor="middle" font-size="12" fill="#3f9e6b">0.71</text>
+<rect x="166" y="179.2" width="42" height="150.8" rx="2" fill="#2e8b57"/><text x="187" y="173.2" text-anchor="middle" font-size="12" fill="#2e8b57" font-weight="700">0.75</text>
+<text x="164" y="348" text-anchor="middle" font-size="12" fill="#3b424c">R1 · reproducibility</text>
+<text x="164" y="363" text-anchor="middle" font-size="12" fill="#3b424c">(cross-WELL)</text>
+<rect x="238" y="144.9" width="42" height="185.1" rx="2" fill="#3f9e6b"/><text x="259" y="138.9" text-anchor="middle" font-size="12" fill="#3f9e6b">0.93</text>
+<rect x="284" y="143.4" width="42" height="186.6" rx="2" fill="#2e8b57"/><text x="305" y="137.4" text-anchor="middle" font-size="12" fill="#2e8b57" font-weight="700">0.93</text>
+<text x="282" y="348" text-anchor="middle" font-size="12" fill="#3b424c">R2 · reliability</text>
+<text x="282" y="363" text-anchor="middle" font-size="12" fill="#3b424c">ceiling</text>
+<rect x="356" y="157.5" width="42" height="172.5" rx="2" fill="#3f9e6b"/><text x="377" y="151.5" text-anchor="middle" font-size="12" fill="#3f9e6b">0.86</text>
+<rect x="402" y="144.7" width="42" height="185.3" rx="2" fill="#2e8b57"/><text x="423" y="138.7" text-anchor="middle" font-size="12" fill="#2e8b57" font-weight="700">0.93</text>
+<text x="400" y="348" text-anchor="middle" font-size="12" fill="#3b424c">R3 · relational</text>
+<text x="400" y="363" text-anchor="middle" font-size="12" fill="#3b424c">object S</text>
+<rect x="500" y="130" width="290" height="200" rx="8" fill="#f4dddb" stroke="#d9a9a4"/>
+<text x="516" y="158" font-size="14" font-weight="700" fill="#a8423e">Machinery ports — floor NOT re-tested</text>
+<text x="516" y="184" font-size="12.5" fill="#5a2a26"><tspan font-weight="700">R1 is cross-WELL</tspan> (technical replicate),</text>
+<text x="516" y="201" font-size="12.5" fill="#5a2a26">not the cross-DONOR biological floor</text>
+<text x="516" y="218" font-size="12.5" fill="#5a2a26">Marson's 0.03 measured — the public form</text>
+<text x="516" y="235" font-size="12.5" fill="#5a2a26">has no donor demux. 0.71 vs 0.03 is a</text>
+<text x="516" y="252" font-size="12.5" fill="#5a2a26"><tspan font-weight="700">non-comparison</tspan>.</text>
+<text x="516" y="278" font-size="12" fill="#5a2a26">Also: same lab · CRISPRa vs CRISPRi ·</text>
+<text x="516" y="294" font-size="12" fill="#5a2a26">selected strong hits · 3/7 probes</text>
+<text x="516" y="311" font-size="12" fill="#5a2a26">(P4/P5 N/A; P1/P2/P7 deferred).</text>
+<text x="40" y="392" font-size="12.5" fill="#5a616b">The instrument RUNS on a second, same-consortium primary-cell Perturb-seq dataset and produces a coherent, null-discriminating scorecard.</text>
+<text x="40" y="412" font-size="12.5" fill="#5a616b">That is <tspan font-weight="700">machinery portability</tspan> — not evidence the narrow-recoverable-signal finding generalizes. Next step: a donor-demuxed second dataset.</text>
+<text x="40" y="450" font-size="11.5" fill="#8a8f98">results/gpa2_scorecard.csv · scripts/gpa2_stage2b_probes.py · GPA2_PORT.md</text>
+</svg>
