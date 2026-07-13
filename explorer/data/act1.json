@@ -1,7 +1,7 @@
 {
   "_meta": {
     "source": "real",
-    "generated_utc": "2026-07-12T17:39:27+00:00",
+    "generated_utc": "2026-07-13T05:04:51+00:00",
     "notes": "C2 anchor + control; the do-operator is the signal-detection positive control."
   },
   "c2": {
