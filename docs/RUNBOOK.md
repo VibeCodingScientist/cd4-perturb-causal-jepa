@@ -1,13 +1,13 @@
 # RUNBOOK — producing the real CP1 benchmark on a GPU box
 
-Everything here runs on a single GPU box (A10G / L4, 24 GB) with ~150 GB free disk. CP1
-(baselines + causal + non-causal on both hold-outs) needs the **44.6 GB CZI pseudobulk file**,
-not the 1.7 TB of single cells — those are the JEPA lane's input (Developer 2 / CP2).
+All procedures described here run on a single GPU box (A10G / L4, 24 GB) with approximately 150 GB of free disk. CP1
+(baselines, causal, and non-causal on both hold-outs) requires the **44.6 GB CZI pseudobulk file**,
+rather than the 1.7 TB of single cells; the latter constitute the input to the JEPA lane (Developer 2 / CP2).
 
 ## 0. Box requirements
-- GPU: NVIDIA A10G or L4, 24 GB (matches the plan's L4 sizing).
-- Disk: ~150 GB free (44.6 GB pseudobulk + 16.8 GB DE-stats optional + caches + checkpoints).
-- ~32–64 GB RAM. CUDA 12.x. conda/mamba (or a venv).
+- GPU: NVIDIA A10G or L4, 24 GB (matching the L4 sizing specified in the plan).
+- Disk: approximately 150 GB free (44.6 GB pseudobulk, 16.8 GB DE-stats optional, caches, and checkpoints).
+- Approximately 32–64 GB RAM, CUDA 12.x, and conda/mamba (or a venv).
 
 ## 1. Clone + environment
 ```bash
@@ -35,7 +35,7 @@ aws s3 cp --no-sign-request --recursive \
 ```
 
 ## 3. Build the frozen core (Lane C, CPU)
-Normalizes per-guide profiles, averages guides, builds per-(gene,condition,donor) pseudobulk +
+This step normalizes per-guide profiles, averages guides, builds per-(gene, condition, donor) pseudobulk and
 deltas, freezes `split_manifest.json` against the file SHA256, and writes the DEG-frequency cache.
 ```bash
 python -c "from core import data; data.build_from_czi_pseudobulk('$CD4_DATA_ROOT/raw/GWCD4i.pseudobulk_merged.h5ad', doi='10.64898/2025.12.23.696273')"
@@ -46,58 +46,58 @@ python -m core.split            # prints the frozen split summary; commit split_
 ```bash
 ./.venv/bin/python scripts/build_priors.py
 ```
-This downloads the bulk Ensembl human peptide FASTA once (~15 MB), maps each HVG gene to its
-longest protein (≈99.8% coverage on the real panel), embeds with ESM-2 650M on the GPU
-(~14 min on an L4), and writes `esm2.parquet` (1280-d) + `context_prior.parquet` (a 512-d PCA
+This step downloads the bulk Ensembl human peptide FASTA once (approximately 15 MB), maps each HVG gene to its
+longest protein (approximately 99.8% coverage on the real panel), embeds with ESM-2 650M on the GPU
+(approximately 14 min on an L4), and writes `esm2.parquet` (1280-d) and `context_prior.parquet` (a 512-d PCA
 projection). The plan's node2vec-over-STRING network prior is wired
 (`core.features.build_context_prior_node2vec`) as a follow-up; the ESM-2 function prior is the
 one that matters for zero-shot generalization to unseen genes.
 
-> Do NOT use `gget.seq` for the whole panel — 3000 per-gene Ensembl queries stall. The bulk
-> FASTA is one request.
+> Do not use `gget.seq` for the whole panel, as 3000 per-gene Ensembl queries stall. The bulk
+> FASTA is retrieved in a single request.
 
 ## 5. Run CP1 (baselines + causal + non-causal)
 ```bash
 ./.venv/bin/python scripts/run_cp1.py     # Ridge + FCN + causal + non-causal -> benchmark_table.csv
 ```
-Or the whole thing via Snakemake:
+Alternatively, the entire pipeline may be run via Snakemake:
 ```bash
 snakemake --cores all --config raw_h5ad="$CD4_DATA_ROOT/raw/GWCD4i.pseudobulk_merged.h5ad"
 ```
 
 > **TabPFN gate.** `tabpfn>=8` downloads license-gated Prior-Labs models (a one-time browser
 > license acceptance on Hugging Face); older ungated versions break the sklearn/scipy stack.
-> On a fresh headless box TabPFN is therefore marked N/A — accept the Prior-Labs license with
-> your HF account (one click) + a token, then `python -c "from core.models import baselines as b;
-> b.run_tabpfn()"` to add its rows. CP1 stands on Ridge (the strong baseline) + FCN + causal +
+> On a fresh headless box TabPFN is therefore marked N/A. Accept the Prior-Labs license with
+> a Hugging Face account (one click) and a token, then run `python -c "from core.models import baselines as b;
+> b.run_tabpfn()"` to add its rows. CP1 stands on Ridge (the strong baseline), FCN, causal, and
 > non-causal without it.
 
 ## 6. CP1 done
-`results/benchmark_table.csv` has ridge / tabpfn / fcn / causal / noncausal on the gene and
-condition hold-outs; the split SHA is frozen; the mode-collapse detector flags any collapsed
-model. Commit `results/benchmark_table.csv` + `split_manifest.json` + `split/hvg_3000.txt`.
+`results/benchmark_table.csv` contains ridge / tabpfn / fcn / causal / noncausal on the gene and
+condition hold-outs; the split SHA is frozen; and the mode-collapse detector flags any collapsed
+model. Commit `results/benchmark_table.csv`, `split_manifest.json`, and `split/hvg_3000.txt`.
 
-CP2 (Developer 2): the JEPA cells of the 2×2 need the per-donor cell h5ads
-(`s3://genome-scale-tcell-perturb-seq/marson2025_data/D*_*.assigned_guide.h5ad`, ~118–173 GB
-each) — subsample per §7e; submit `jepa` / `jepa_finetune` to the same queue.
+CP2 (Developer 2): the JEPA cells of the 2×2 require the per-donor cell h5ads
+(`s3://genome-scale-tcell-perturb-seq/marson2025_data/D*_*.assigned_guide.h5ad`, approximately 118–173 GB
+each). These should be subsampled per §7e; submit `jepa` / `jepa_finetune` to the same queue.
 
 ## 7. Box infra notes (supplementary CPU gates)
 
 - **Run CZI-reading gates in the FOREGROUND** over SSH with `-o ServerAliveInterval=15` (and a
-  `timeout`), e.g. `ssh -o ServerAliveInterval=15 box 'cd ~/gate && CD4_DATA_ROOT=... timeout 400
-  python -u scripts/<gate>.py'`. Detached `setsid nohup ... & disown` launches **died silently**
-  (empty logs, no traceback) during the C-DON gate — do not rely on them for the multi-minute
+  `timeout`), for example `ssh -o ServerAliveInterval=15 box 'cd ~/gate && CD4_DATA_ROOT=... timeout 400
+  python -u scripts/<gate>.py'`. Detached `setsid nohup ... & disown` launches died silently
+  (empty logs, no traceback) during the C-DON gate, and should not be relied upon for the multi-minute
   CZI read. The 44 GB pseudobulk is OS-page-cached after the first read, so re-runs are fast.
-- **Large per-guide aggregation** (mean over conditions across ~90k guide×donor groups on 3,000
-  HVG): use `np.argsort` + `np.add.reduceat` on a `float32` array. `np.add.at` (unbuffered, slow)
-  and `pd.DataFrame(s).groupby(...).mean()` (4 GB copy) both stalled/OOM'd G-D.2. Science was
-  unaffected — G-D.1 reproduced identically across three runs.
-- **Scratch / verification runs must NEVER write to `CD4_DATA_ROOT`.** During C-FUSE 1b, freeze-verification
-  test runs wrote **synthetic fixtures over the real pseudobulk + ESM2** in `DATA_ROOT`; only the immutable
-  raw CZI surviving (+ the committed freeze) made it recoverable. Point test suites / fixtures at an
+- **Large per-guide aggregation** (mean over conditions across approximately 90k guide×donor groups on 3,000
+  HVG): use `np.argsort` with `np.add.reduceat` on a `float32` array. Both `np.add.at` (unbuffered, slow)
+  and `pd.DataFrame(s).groupby(...).mean()` (4 GB copy) stalled or ran out of memory on G-D.2. The science was
+  unaffected, as G-D.1 reproduced identically across three runs.
+- **Scratch and verification runs must never write to `CD4_DATA_ROOT`.** During C-FUSE 1b, freeze-verification
+  test runs wrote synthetic fixtures over the real pseudobulk and ESM2 in `DATA_ROOT`; only the survival of the immutable
+  raw CZI (together with the committed freeze) made recovery possible. Point test suites and fixtures at an
   **isolated scratch `DATA_ROOT`**, never the shared one.
-- **A C2 positive control is MANDATORY after any restore/regeneration of `DATA_ROOT`** before trusting a
-  result computed on it. "Aligned to the HVG panel" is only a *shape* check — it does not prove the values
-  are real. Re-train full and reproduce the committed within-distribution C2
+- **A C2 positive control is mandatory after any restore or regeneration of `DATA_ROOT`** before trusting a
+  result computed on it. "Aligned to the HVG panel" is only a *shape* check; it does not prove the values
+  are real. Re-train in full and reproduce the committed within-distribution C2
   (`scripts/c2_control.py` → condition **+0.118** / gene **+0.162**, band ±0.06); only on a PASS is a
   result on regenerated data trustworthy. C-FUSE 1b reproduced +0.106 / +0.156 → PASS.

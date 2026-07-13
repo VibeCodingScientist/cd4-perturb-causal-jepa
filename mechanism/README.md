@@ -1,19 +1,23 @@
 # Mechanism & fluctuation-response probes — two negatives, one positive (supplementary)
 
 Three self-contained, CPU-only synthetic probes on the "Mechanisms Matter" (Qi & Chapfuwa) /
-CIPHER line, each proven on ground truth where the answer is known. The arc:
+CIPHER line are presented here, each validated on ground truth where the answer is known. The
+sequence is as follows.
 
-1. **Probe #1 (linear, single held-out perturbations)** — does an explicitly-estimated per-context
-   causal matrix `Â_C` beat correlation baselines at cross-context transportability? → **FAIL**.
-2. **Probe #2 (nonlinear, held-out doubles)** — does nonlinearity/epistasis let `Â_C` overtake
-   correlation? → **FAIL / PARK**.
-3. **Probe #3, the C-NL gate (third moment)** — does the *baseline third moment* predict the
-   perturbation response that covariance provably cannot? → **LIVE** (the positive).
+1. **Probe #1 (linear, single held-out perturbations)** examines whether an explicitly-estimated
+   per-context causal matrix `Â_C` outperforms correlation baselines at cross-context
+   transportability. The verdict is FAIL.
+2. **Probe #2 (nonlinear, held-out doubles)** examines whether nonlinearity and epistasis allow
+   `Â_C` to overtake correlation. The verdict is FAIL / PARK.
+3. **Probe #3, the C-NL gate (third moment)** examines whether the *baseline third moment* predicts
+   the perturbation response that covariance provably cannot. This probe is LIVE and constitutes the
+   positive result.
 
-The through-line: in a linear-Gaussian system the control covariance solves the Lyapunov equation, so
-`Σ` is a near-sufficient statistic for the mechanism — which is *why* correlation baselines are
-unbeatable (#1–#2). The one thing covariance cannot carry is the non-Gaussian (third-moment) structure
-of the fluctuations — and that is exactly where #3 found real, estimable signal.
+The unifying argument is that, in a linear-Gaussian system, the control covariance solves the
+Lyapunov equation, so `Σ` is a near-sufficient statistic for the mechanism. This is precisely why the
+correlation baselines are difficult to beat in Probes #1 and #2. The one quantity covariance cannot
+carry is the non-Gaussian (third-moment) structure of the fluctuations, and that is exactly where
+Probe #3 identified real, estimable signal.
 
 ---
 
@@ -28,8 +32,9 @@ of the fluctuations — and that is exactly where #3 found real, estimable signa
 | Null: co-expression (GEARS) | 0.702 [0.647, 0.748] |
 | **Mechanism (column-k, best)** | **0.689** [0.640, 0.732] |
 
-`gap(mech − corr) = −0.140 [−0.224, −0.053]` → FAIL. Oracle=1.0 ⇒ signal real, `Â`-estimation under
-P≪G is the wall; correlation sharpens *faster* with depth (0.72→0.96). Details: [`FINDINGS.md`](FINDINGS.md),
+The result `gap(mech − corr) = −0.140 [−0.224, −0.053]` yields a verdict of FAIL. Because Oracle=1.0,
+the signal is real; the limiting factor is `Â`-estimation under P≪G. Correlation sharpens *faster*
+with depth (0.72→0.96). Further details are given in [`FINDINGS.md`](FINDINGS.md) and
 `results/{c4_auroc.csv, moneyshot.png, sensitivity_ncells.png}`.
 
 ## Probe #2 — mechanism recovery, nonlinear regime (doubles) → FAIL / PARK
@@ -41,17 +46,18 @@ P≪G is the wall; correlation sharpens *faster* with depth (0.72→0.96). Detai
 | 0.00 | 0.00 | 0.997 | 1.000 | 1.000 | 1.000 | −0.003 |
 | 0.85 | 0.18 | 0.982 | 0.983 | 0.999 | 0.876 | −0.001 |
 
-Gap stays flat across λ; summing *observed* singles predicts the epistatic double at cos 0.98 while the
-mechanism reaches 0.65. Standalone positive: the linear transportability condition degrades AUROC
-1.00→0.88 under nonlinearity. Details: [`FINDINGS_SPIKE2.md`](FINDINGS_SPIKE2.md),
-`results/{gap_vs_lambda.png, spike2_diagnostics.csv}`.
+The gap remains flat across λ; summing *observed* singles predicts the epistatic double at cos 0.98,
+whereas the mechanism reaches 0.65. A standalone positive result is that the linear transportability
+condition degrades AUROC from 1.00 to 0.88 under nonlinearity. Further details are given in
+[`FINDINGS_SPIKE2.md`](FINDINGS_SPIKE2.md) and `results/{gap_vs_lambda.png, spike2_diagnostics.csv}`.
 
 ## Probe #3 — the C-NL gate (third moment) → LIVE
 
-Symmetric (equilibrium) `A` so CIPHER's `Σu` is the exact first-order response (σ²=2 ⇒ `Σ=−A⁻¹`,
-clean λ=0), genuine nonlinear-SDE Euler–Maruyama sampling (needed for a nonzero third moment), nonzero
-baseline `b` (else the odd `tanh` gives a symmetric law with zero third moment). Pure second-order
-response `c_ik = [Δμ_i(+m e_k)+Δμ_i(−m e_k)]/(2m²)`.
+The construction uses a symmetric (equilibrium) `A` so that CIPHER's `Σu` is the exact first-order
+response (σ²=2 ⇒ `Σ=−A⁻¹`, clean λ=0), genuine nonlinear-SDE Euler–Maruyama sampling (required for a
+nonzero third moment), and a nonzero baseline `b` (otherwise the odd `tanh` gives a symmetric law with
+zero third moment). The quantity of interest is the pure second-order response
+`c_ik = [Δμ_i(+m e_k)+Δμ_i(−m e_k)]/(2m²)`.
 
 | λ | R²_T | R²_cov | ΔR² [95% CI] |
 |---|---|---|---|
@@ -59,16 +65,19 @@ response `c_ik = [Δμ_i(+m e_k)+Δμ_i(−m e_k)]/(2m²)`.
 | 0.50 | 0.73 | 0.00 | **+0.733** [+0.673, +0.772] |
 | 0.85 | 0.76 | 0.01 | **+0.749** [+0.640, +0.802] |
 
-The baseline third moment `T_ikk` explains ~61–76% of the second-order response; the covariance
-surrogate `Σ_ik²` explains ~0%. **Test 3**: survives to 1,000 control cells (latent ΔR² 0.75→0.61;
-NB-emission-on 0.25→0.19 — emission costs ~2/3 of the signal but holds). **Honest caveats**: the
-nonlinear term is *small* (~3–4% of the response — prediction is strong, magnitude on real data is a
-separate sizing question); the gate is equilibrium-only (necessary-not-sufficient for real non-equilibrium
-networks); it is a *response* predictor, **not** causation (does not resurrect `Â_C`). Details:
-[`FINDINGS_CNL.md`](FINDINGS_CNL.md), `results/{delta_r2_vs_lambda.png, depth_threshold.png}`.
+The baseline third moment `T_ikk` explains approximately 61–76% of the second-order response, while
+the covariance surrogate `Σ_ik²` explains approximately 0%. **Test 3** confirms that the effect
+survives to 1,000 control cells (latent ΔR² 0.75→0.61; NB-emission-on 0.25→0.19 — emission costs
+approximately 2/3 of the signal but the effect holds). Several honest caveats apply. The nonlinear
+term is *small* (approximately 3–4% of the response — the prediction is strong, but its magnitude on
+real data is a separate sizing question); the gate is equilibrium-only (necessary but not sufficient
+for real non-equilibrium networks); and it is a *response* predictor, not causation (it does not
+resurrect `Â_C`). Further details are given in [`FINDINGS_CNL.md`](FINDINGS_CNL.md) and
+`results/{delta_r2_vs_lambda.png, depth_threshold.png}`.
 
-**Provenance discipline** (kept throughout `FINDINGS_CNL.md`): the third-moment link is an *inference*
-from fluctuation-response theory, **never** attributed to CIPHER; the coefficient is *fit*, not assumed ½.
+**Provenance discipline** (maintained throughout `FINDINGS_CNL.md`): the third-moment link is an
+*inference* from fluctuation-response theory and is never attributed to CIPHER; the coefficient is
+*fit* rather than assumed to be ½.
 
 ---
 
@@ -81,8 +90,8 @@ python run_spike2.py && python spike2_diag.py                   # probe #2
 python run_cnl_gate.py                                          # probe #3 (C-NL); `quick` for a fast read
 ```
 
-Seeds fixed; deterministic; regenerates every committed artifact. Raw per-record CSVs are git-ignored;
-curated `results/` artifacts are committed.
+Seeds are fixed and the runs are deterministic, regenerating every committed artifact. Raw per-record
+CSVs are git-ignored; curated `results/` artifacts are committed.
 
 ### Files
 
@@ -97,6 +106,6 @@ curated `results/` artifacts are committed.
 
 ## Scope guard
 
-Out of scope by rule (all probes): real ZHU25 data, the A/B decomposition, acquisition, and — for #3 —
-the real-data build (closed-form `Σu + c·T[u,u]`, low-rank `T`) and the analytic-½ derivation. Those are
-gated on these results and are the project lead's call.
+The following are out of scope by rule (for all probes): real ZHU25 data, the A/B decomposition,
+acquisition, and — for #3 — the real-data build (closed-form `Σu + c·T[u,u]`, low-rank `T`) and the
+analytic-½ derivation. These are gated on the present results and remain the project lead's decision.

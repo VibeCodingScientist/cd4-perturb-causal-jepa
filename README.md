@@ -2,38 +2,39 @@
 
 **Built with Claude: Life Sciences (2026).**
 
-Predicting the transcriptional effect of a CRISPRi gene knockdown in primary human
-CD4+ T cells — including in an **activation state the model has never seen**.
+This work predicts the transcriptional effect of a CRISPRi gene knockdown in primary human
+CD4+ T cells, including prediction within an activation state the model has never observed.
 
-> "Standard models treat a gene knockdown as an *observation*. We treat it as an
-> *intervention* — and that distinction is what lets the model predict a
-> knockdown's effect in an activation state it has never seen."
+> "Standard models treat a gene knockdown as an *observation*. This work treats it as an
+> *intervention*, and that distinction is what enables the model to predict a
+> knockdown's effect in an activation state it has never observed."
 
-This repository is one pipeline whose experimental core is a **2×2 ablation**
+This repository comprises a single pipeline whose experimental core is a 2×2 ablation
 (`JEPA-init × causal-mask`). The causal claim, the do-operator isolation, and the
-JEPA claim are three cells of that single matrix. Ridge / TabPFN / PseudoBulk-FCN /
-Arc State are external reference points; a Value-of-Information (VOI) layer turns
+JEPA claim are three cells of that single matrix. Ridge, TabPFN, PseudoBulk-FCN, and
+Arc State serve as external reference points; a Value-of-Information (VOI) layer converts
 model disagreement into a sample-efficient experimental-design recommendation.
 
 The full technical specification is [`UNIFIED_BUILD_PLAN.md`](docs/UNIFIED_BUILD_PLAN.md).
-The pre-registered hypotheses are in [`hypotheses.md`](hypotheses.md) and were
-committed **before** any model saw data.
+The pre-registered hypotheses are recorded in [`hypotheses.md`](hypotheses.md) and were
+committed *before* any model saw data.
 
-> ## For judges — 60 seconds
-> **What.** A **dataset predictability audit** for the Marson genome-scale CD4⁺ CRISPRi Perturb-seq: seven
-> pre-registered probes + the do-operator positive control, assembled into **one scorecard** that answers
-> *how much of this dataset is predictable at all, and by what kind of structure* — each cell scored against a
-> degree/label-preserving null and calibrated to the measured reliability ceiling.
+> ## Summary for reviewers
+> **Scope.** A dataset predictability audit for the Marson genome-scale CD4⁺ CRISPRi Perturb-seq: seven
+> pre-registered probes together with the do-operator positive control, assembled into a single scorecard that
+> addresses how much of this dataset is predictable at all, and by what kind of structure. Each cell is scored
+> against a degree/label-preserving null and calibrated to the measured reliability ceiling.
 >
-> **The finding.** Under honest measurement the recoverable signal is **far narrower** than the genome-scale
-> volume suggests: **six probes sit at the noise floor**, and the one accuracy positive — the do-operator
-> (C2, **+0.118 / +0.162** Pearson-δ) — is **in-distribution, not causal** (it does *not* transfer to held-out
-> external causal edges). An **evaluation/methods** contribution (novelty **Tier-2**), not a new predictor.
+> **The finding.** Under honest measurement, the recoverable signal is considerably narrower than the
+> genome-scale volume suggests: six probes sit at the noise floor, and the single accuracy positive — the
+> do-operator (C2, **+0.118 / +0.162** Pearson-δ) — is in-distribution, not causal (it does not transfer to
+> held-out external causal edges). This constitutes an evaluation/methods contribution (novelty Tier-2), not a
+> new predictor.
 >
 > **Reproduce — one command, no GPU, no data download:** `python -m predictability_audit.scorecard`
-> (reproduces all seven verdicts + the C2 control from the committed CSVs).
+> (reproduces all seven verdicts and the C2 control from the committed CSVs).
 >
-> **See it:** full story [`PREDICTABILITY_AUDIT.md`](PREDICTABILITY_AUDIT.md) · offline demo
+> **See it:** full account [`PREDICTABILITY_AUDIT.md`](PREDICTABILITY_AUDIT.md) · offline demo
 > [`explorer/explorer_bundle.html`](explorer/explorer_bundle.html) · releases `submission-v2` (@ `a8878d5`,
 > submission of record) and `submission-fallback-v1` (@ `6476670`, frozen fallback).
 
@@ -41,20 +42,20 @@ committed **before** any model saw data.
 
 ## Results at a glance
 
-- **Headline (do-operator, C2).** The interventional causal mask beats its non-causal twin on
+- **Headline (do-operator, C2).** The interventional causal mask outperforms its non-causal twin on
   zero-shot perturbation prediction — Pearson-δ (top-50 DEGs) **+0.118** on the condition hold-out
   and **+0.162** on the gene hold-out ([`results/benchmark_table.csv`](results/benchmark_table.csv):
-  causal 0.344/0.368 vs non-causal 0.226/0.206). On a **fraction-of-ceiling** axis (the honest metric —
-  raw δ is baseline-dominated) the do-operator reaches **0.55** of the achievable gene-axis signal,
+  causal 0.344/0.368 vs non-causal 0.226/0.206). On a fraction-of-ceiling axis (the honest metric,
+  since raw δ is baseline-dominated) the do-operator reaches **0.55** of the achievable gene-axis signal,
   where a linear model collapses to **0.02** ([`BUDGET.md`](docs/BUDGET.md)).
-- **The frontier is mapped, honestly.** Six *pre-registered* CPU gates asked whether the
+- **The frontier is characterized with honest bounds.** Six pre-registered CPU gates asked whether the
   per-perturbation prediction floor (~**0.03** cross-donor) can be broken — causal-matrix, fluctuation,
-  single-cell SNR, trajectory-geometry, donor-structure, relational structure. **All six are clean
-  negatives**, each traceable to a committed gate CSV, **zero GPU spent**. The floor is real and
-  object-general. A **seventh, GPU-gated** external-validation test (C-FUSE 1b) then closed the causal
-  question — the do-operator's within-dataset C2 advantage does **not** replicate on held-out external
+  single-cell SNR, trajectory-geometry, donor-structure, and relational structure. All six are clean
+  negatives, each traceable to a committed gate CSV, with zero GPU spent. The floor is real and
+  object-general. A seventh, GPU-gated external-validation test (C-FUSE 1b) then closed the causal
+  question: the do-operator's within-dataset C2 advantage does not replicate on held-out external
   causal edges (recovered above null, but no better than its non-causal twin), so the edge is
-  **in-distribution, not causal** (data-integrity C2 control passed). → [**Supplementary analyses — the full arc**](#supplementary-analyses--the-full-arc).
+  in-distribution, not causal (data-integrity C2 control passed). → [**Supplementary analyses — the full arc**](#supplementary-analyses--the-full-arc).
 
 **Every number reproduces from the committed CSVs** — `python -m predictability_audit.scorecard` (stdlib-only, no GPU, no data download):
 
@@ -69,11 +70,11 @@ committed **before** any model saw data.
 
 ### The two GPU results, visualized
 
-**Is the do-operator's edge causal *externally*?** No — it recovers held-out external edge *direction* above null, but no better than its non-causal twin:
+**Is the do-operator's edge causal *externally*?** No: it recovers held-out external edge *direction* above null, but no better than its non-causal twin.
 
 ![External causal-edge validation: causal recovers above null but equals its twin — in-distribution, not causal](figures/external_validation.svg)
 
-**Does the audit machinery port to a second dataset?** Yes, qualified — the identical probes run on Schmidt 2022 and produce a coherent, null-discriminating scorecard; but this is *machinery portability*, **not** proof the floor finding generalizes:
+**Does the audit machinery port to a second dataset?** Yes, with qualification: the identical probes run on Schmidt 2022 and produce a coherent, null-discriminating scorecard. This demonstrates machinery portability, not proof that the floor finding generalizes.
 
 ![Second-dataset port to Schmidt 2022: three probes reproduce above their null; machinery ports, floor not re-tested](figures/second_dataset_port.svg)
 
@@ -127,31 +128,31 @@ appendix in `results/benchmark_table_full.csv`):
 | gene | ridge | 0.019 | 0.501 | 0.506 |
 | gene | fcn | 0.107 | 0.500 | 0.554 |
 
-**C2 — the do-operator works (headline, pre-registered).** Same architecture, mask on vs off:
-the causal mask beats its non-causal twin by **+52%** on the condition hold-out (0.344 vs 0.226)
+**C2 — the do-operator advantage (headline, pre-registered).** With the same architecture, mask on
+versus off, the causal mask beats its non-causal twin by **+52%** on the condition hold-out (0.344 vs 0.226)
 and **+79%** on the gene hold-out (0.368 vs 0.206). The advantage is consistent across
-Pearson-δ, E-distance (2.46 vs 6.46 condition; lower better), and AUPRC. The corrected
+Pearson-δ, E-distance (2.46 vs 6.46 condition; lower is better), and AUPRC. The corrected
 do-mask — masking only the perturbed gene's query row so the intervention propagates
-downstream — is doing real work.
+downstream — contributes measurably.
 
 **Zero-shot to unseen genes:** the causal model generalizes to genes it never saw silenced
 (**0.368**) where the linear baseline fully collapses (Ridge **0.019**).
 
-**Honest caveats.** On the pure condition shift, a simple gene→δ linear map (Ridge, 0.384) is
-still competitive with / slightly ahead of the causal transformer (0.344), and only Ridge on the
-condition hold-out clears the mode-collapse bar (rank < 0.4) — the transformers sit in the
+**Honest caveats.** On the pure condition shift, a simple gene→δ linear map (Ridge, 0.384) remains
+competitive with, or slightly ahead of, the causal transformer (0.344), and only Ridge on the
+condition hold-out clears the mode-collapse bar (rank < 0.4); the transformers sit in the
 borderline 0.44–0.48 band (causal always sharper than non-causal). TabPFN is license-gated on a
-headless box (see RUNBOOK); the JEPA cells of the 2×2 (C3) are CP2.
+headless box (see RUNBOOK), and the JEPA cells of the 2×2 (C3) are deferred to CP2.
 
-## The two corrections this build refuses to revert (`UNIFIED_BUILD_PLAN.md` §1)
+## The two corrections this build retains (`UNIFIED_BUILD_PLAN.md` §1)
 
 1. **Causal do-mask propagates.** An intervention removes only edges *into* the
-   perturbed gene (mask its query row); other genes **must still attend to it** so
-   the intervention propagates downstream. We do **not** add `M[:, perturbed] = -inf`.
+   perturbed gene (masking its query row); other genes must still attend to it so
+   that the intervention propagates downstream. This build does not add `M[:, perturbed] = -inf`.
    (DoFormer, bioRxiv 2026.05.02.722054.)
-2. **JEPA uses an EMA teacher at single-cell resolution.** Student on masked input
-   + stop-gradient EMA teacher on unmasked input + predictor head + cosine loss,
-   masking expression *values* within a cell — not a pseudobulk MLP.
+2. **JEPA uses an EMA teacher at single-cell resolution.** A student on masked input,
+   a stop-gradient EMA teacher on unmasked input, a predictor head, and a cosine loss,
+   masking expression *values* within a cell rather than employing a pseudobulk MLP.
    (Cell-JEPA, arXiv 2602.02093.)
 
 ## Repository layout
@@ -202,9 +203,9 @@ python gpu_queue.py submit noncausal # G3
 
 ## Single-GPU concurrency (`UNIFIED_BUILD_PLAN.md` §6)
 
-Three lanes, one L4 (24 GB). **Lane C** (CPU) runs data/QC/pseudobulk/features/eval
+Three lanes share one L4 (24 GB). **Lane C** (CPU) runs data/QC/pseudobulk/features/eval
 continuously and scores each model the moment its `runs/*.parquet` lands. **Lane G**
-is a *serial* GPU queue (`gpu_queue.py`) — one job at a time, in priority order, each
+is a *serial* GPU queue (`gpu_queue.py`), executing one job at a time, in priority order, each
 gated by a 1-epoch measure-then-extrapolate check. **Lane D** is code-writing
 concurrency across up to two `git worktree` checkouts that share the one queue.
 
@@ -221,16 +222,16 @@ against SHA `fd2b8c21…`. `snakemake -n cp2` resolves the DAG end-to-end.
 
 **Known non-blocking test flake.** `test_ridge_learns_and_records` asserts a synthetic
 `ridge Pearson-δ > 0.4` bound that numpy 2.4.6 (in-spec per the `numpy=2.*` pin) trips; the suite is
-otherwise **69/70 green** and **CP2's committed numbers are unaffected** (`results/benchmark_table.csv`
-is byte-identical since the CP2-final commit). Tracked as a follow-up (loosen the synthetic threshold or
-tighten the pin) — not a regression in any pipeline code.
+otherwise **69/70 green** and CP2's committed numbers are unaffected (`results/benchmark_table.csv`
+is byte-identical since the CP2-final commit). This is tracked as a follow-up (loosen the synthetic threshold or
+tighten the pin) and is not a regression in any pipeline code.
 
 ## Supplementary analyses — the full arc
 
 Beyond the primary CP1/CP2 benchmark, a sequence of pre-registered supplementary analyses probe *why*
 the hard perturbations are hard. Each is committed with an honest one-line verdict and a pointer;
-every claim is **fraction-of-ceiling / partial-correlation, per axis** (raw Pearson-δ is
-baseline-dominated), and results are framed as attempts against a measured target, not solved problems.
+every claim is reported as fraction-of-ceiling / partial-correlation, per axis (raw Pearson-δ is
+baseline-dominated), and results are framed as attempts against a measured target rather than solved problems.
 
 **Provenance trail (auditable):** every result carries a per-result git **tag** (`cp1`, `cp2`,
 `budget-final`, `phaseB-final`, `mechanism-spike-final`, `cnl-gate-final`, `cnl-realdata-final`,
@@ -250,38 +251,38 @@ negatives are reproducible look-ups, not recollections.
 | **Relational-object recovery** | **FAIL** — relational structure is floored too: no specific-space object (similarity/loadings/rank) reaches 0.30 (S 0.008, best loading factor 0.17, high-effect subset 0.037). Raw-space S ≈ 0.9 is a *constant-cosine artifact*, not a reproducible pattern (repo measures 0.007). The floor is object-general | [`RELATIONAL.md`](docs/RELATIONAL.md) |
 | **External causal-edge validation (C-FUSE 1b, GPU)** | **FAIL (causal-specificity)** — the do-operator recovers held-out external edge *direction* above null (9/9 regulators >0.5, binom p=0.004) but with **no** advantage over its non-causal twin (causal−twin **−0.010**, regulator cluster-bootstrap CI [−0.013, −0.005]); the within-dataset C2 edge is **in-distribution, not causal**. Signal rides Freimer *indirect* KO-DE edges; the 45 *direct* Weinstock (LLCB) edges sit at chance (0.400, p=0.94). Data-integrity **C2 positive control passed** (restored data verified real: +0.106/+0.156 vs committed +0.118/+0.162) | [`FUSION_GATES.md`](docs/FUSION_GATES.md) |
 
-**Provenance notes (preserved across the arc):** the CIPHER raw-count residual ≠ the budget's Ridge-based
-bucket C — a looser object; only its *structure* transfers. The third-moment link is an *inference* from
+**Provenance notes (preserved across the arc):** the CIPHER raw-count residual differs from the budget's Ridge-based
+bucket C, being a looser object; only its *structure* transfers. The third-moment link is an *inference* from
 response theory, not a CIPHER claim. Reliability is an *upper bound* on any model's achievable δ, not a
-guarantee a model reaching it exists.
+guarantee that a model reaching it exists.
 
 ### Mechanism recovery
 
 A reproducible synthetic study ([`mechanism/`](mechanism/), CPU-only) testing whether explicit
 per-context causal-matrix (`Â_C`) estimation beats correlation baselines for cross-context
-transportability. **Result: it does not, under `P≪G`** — in either the linear/single-perturbation or
-the nonlinear/double-perturbation regime (pre-registered bar not met → FAIL, honestly reported). It
-documents *why* correlation baselines are so hard to beat on the field's own simulator (the stationary
-covariance solves the Lyapunov equation, so `Σ` is a near-sufficient statistic for `A`), and — a
+transportability. The result is that it does not, under `P≪G`, in either the linear/single-perturbation or
+the nonlinear/double-perturbation regime (the pre-registered bar was not met, and the FAIL is honestly reported). It
+documents *why* correlation baselines are so difficult to beat on the field's own simulator (the stationary
+covariance solves the Lyapunov equation, so `Σ` is a near-sufficient statistic for `A`), and — as a
 standalone positive — how the linear transportability condition itself degrades (AUROC 1.00 → 0.88) as
 the system becomes nonlinear. The transportability signal is real (oracle with true `A` = 1.0) but
 estimation-gated; the one un-tested lever is a materially better estimator.
 
-A **third probe (the C-NL gate) is the positive** of the line: covariance/Lyapunov sufficiency is a
+A **third probe (the C-NL gate) is the positive** result of the line: covariance/Lyapunov sufficiency is a
 *second-moment* property, so the one signal it provably cannot carry lives in the third moment. On
-ground truth the baseline **third moment predicts the second-order perturbation response covariance
-misses** — ΔR² ≈ +0.6–0.75 (CI excluding 0), surviving to 1,000 control cells with NB emission on. The
+ground truth the baseline third moment predicts the second-order perturbation response covariance
+misses — ΔR² ≈ +0.6–0.75 (CI excluding 0), surviving to 1,000 control cells with NB emission on. The
 term is small (~3–4% of the response) but strongly structured; sizing it on real CD4 data is the
-go/no-go. Provenance-guarded (the third-moment link is an inference from response theory, not a CIPHER
+go/no-go. It is provenance-guarded (the third-moment link is an inference from response theory, not a CIPHER
 claim). See [`mechanism/README.md`](mechanism/README.md) and [`mechanism/FINDINGS_CNL.md`](mechanism/FINDINGS_CNL.md).
 
-That go/no-go has now been run, and it **closes the line as a negative**: on real CD4⁺ CRISPRi data
+That go/no-go has now been run, and it closes the line as a negative: on real CD4⁺ CRISPRi data
 (4 donors × 3 states, 16,188 perturbations, CIPHER-exact raw counts) the baseline third moment is
 **orthogonal** to the first-order residual — ΔR² pinned at zero in all 12 strata (mean +0.0000, jackknife
 95% CI [−0.0000, +0.0000]), feature well-formed everywhere. Room exists (the linear model leaves ~91% of
 variance unexplained, and its fit degrades further under stimulation) but the third moment fills none of
-it. The simulator signal does not survive real single-cell estimation error → **no-go on a third-moment
-closed-form.** Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
+it. The simulator signal does not survive real single-cell estimation error, giving a no-go on a third-moment
+closed-form. Full readout: [`mechanism/FINDINGS_CNL_REALDATA.md`](mechanism/FINDINGS_CNL_REALDATA.md).
 
 ### Predictability budget
 
@@ -289,29 +290,29 @@ A CPU-only partition of each perturbation's response into **B** irreducible nois
 condition), **A** linear-explainable, and **C** structured residual, on the eval metric's own scale. The
 ceiling is far from saturated; bucket C is large on the gene axis (≈0.76) and **real** — the
 perturbation-specific residual reproduces across donors ~60–100× above a shuffled-label null (perm
-p<0.001). The do-operator recovers ~56% of it; ~44% is a located gap. Reframes the benchmark as
-**fraction-of-ceiling, per axis**. Full readout: [`BUDGET.md`](docs/BUDGET.md).
+p<0.001). The do-operator recovers ~56% of it; ~44% is a located gap. This reframes the benchmark as
+fraction-of-ceiling, per axis. Full readout: [`BUDGET.md`](docs/BUDGET.md).
 
 ### Residual localization + single-cell SNR pre-check
 
-The bucket-C residual is localized to the **transient T-cell activation cytokine program** (IFNG, IL2,
+The bucket-C residual is localized to the transient T-cell activation cytokine program (IFNG, IL2,
 CSF2, IL3/IL13, CCL/CXCL chemokines, IL2RA) that peaks at the Rest→Stim8hr transition (4/4 donors,
-effect/confound-controlled) — a far-from-equilibrium response. Its reproducible part is a *shared*
+effect/confound-controlled), a far-from-equilibrium response. Its reproducible part is a *shared*
 program; the *per-perturbation* residual is noise-limited at pseudobulk (cross-donor ~0.03). A
-pre-registered SNR pre-check asked whether single-cell resolution would recover it and found **no** —
-single-cell adds no cells (pseudobulk is sufficient for the mean); reaching a usable floor needs ~12×
-cells or ~8% concentration, projected best-case ~0.10. A **confirmed noise floor**, reached with zero
+pre-registered SNR pre-check asked whether single-cell resolution would recover it and found that it would not:
+single-cell adds no cells (pseudobulk is sufficient for the mean), and reaching a usable floor needs ~12×
+cells or ~8% concentration, projected best-case ~0.10. This is a confirmed noise floor, reached with zero
 GPU/egress. Full readout: [`PHASEB.md`](docs/PHASEB.md).
 
 ### Trajectory-coupling (clean negative)
 
 Tested whether predictability is a *dynamical-geometry* property — unrecoverable perturbations moving the
 cell *along* the activation axis, reducible to a scalar displacement. A two-part CPU gate (pre-registered
-C-TC.1/C-TC.2 in [`hypotheses.md`](hypotheses.md)) **both fail**: recoverability vs trajectory-coupling
+C-TC.1/C-TC.2 in [`hypotheses.md`](hypotheses.md)) both fail: recoverability vs trajectory-coupling
 partial Spearman(R,TC | magnitude, reliability) = **+0.007 (condition), +0.034 (gene)**, p = 0.75/0.55
-(bar was |ρ|≥0.3) — 1D and 2D; and the scalar target reproduces at ~0.07, at the noise floor (random-axis
-null 0.03). Predictability is **not** a trajectory-geometry property here; no build ran. The gate projects
-onto a *measured* axis only — it fits **no** dynamical model (3 timepoints underdetermine a vector field).
+(the bar was |ρ|≥0.3), in both 1D and 2D; and the scalar target reproduces at ~0.07, at the noise floor (random-axis
+null 0.03). Predictability is **not** a trajectory-geometry property here, and no build ran. The gate projects
+onto a *measured* axis only and fits no dynamical model (3 timepoints underdetermine a vector field).
 Full readout: [`TRAJECTORY.md`](docs/TRAJECTORY.md).
 
 ### Donor-structured recovery (fifth clean negative)
@@ -319,28 +320,28 @@ Full readout: [`TRAJECTORY.md`](docs/TRAJECTORY.md).
 Tested whether the per-perturbation floor is a cross-donor-*averaging* artifact — a memo showed 0.48
 within-donor vs 0.03 cross-donor reproducibility (16× gap), suggesting recoverable donor-specific
 structure. A two-part CPU gate (pre-registered C-DON.1/C-DON.2 in [`hypotheses.md`](hypotheses.md)),
-run against the dataset's own **2-gRNA/gene** design, **both fail.** Step 0 confirmed the two guides
+run against the dataset's own **2-gRNA/gene** design, both fail. Step 0 confirmed the two guides
 per gene are batch-orthogonal (span both 10x runs), so the test is valid. **G-D.1:** same-gene
 independent-guide within-donor concordance *is* significant (Δ≈0.017, 4/4 donors, perm p<0.001,
-survives composition-correction) — real target-specific biology, but ~8× below the Δ≥0.15 bar, i.e. at
+surviving composition-correction), representing real target-specific biology, but ~8× below the Δ≥0.15 bar, i.e. at
 noise-floor magnitude. **G-D.2:** donor-conditioned recovery (0.016) is beaten by donor-*averaging*
-(0.034) and even wrong-donor (0.024) — donor-conditioning gives *negative* gain. The "0.48" was a
-noise-*model* estimate, not empirical; the 16× gap **inverts** (averaging helps). The floor is real;
-the reversal is refuted. No build (G13 unlicensed). Full readout: [`DONOR.md`](docs/DONOR.md).
+(0.034) and even wrong-donor (0.024), so donor-conditioning gives *negative* gain. The "0.48" was a
+noise-*model* estimate, not empirical; the 16× gap **inverts** (averaging helps). The floor is real, and
+the reversal is refuted. No build ran (G13 unlicensed). Full readout: [`DONOR.md`](docs/DONOR.md).
 
 ### Relational-object recovery (sixth clean negative)
 
 The five negatives above all scored the *pointwise* per-perturbation delta δ_p (cross-donor
 reproducibility ~0.03). This tested a **different object** — the *relational* structure over
 perturbations (perturbation×perturbation similarity **S**, program loadings **L**, per-gene rank
-**R**), which averages over many genes so per-cell noise averages out. Run in **specific**
+**R**), which averages over many genes so that per-cell noise averages out. It was run in **specific**
 (shared-program-removed) space, because raw similarity is dominated by the shared activation program
 (pre-registered C-REL.1/C-REL.2 in [`hypotheses.md`](hypotheses.md)). **G-R.1 fails:** no specific-space
 object reaches the 0.30 bar — S = **0.008**, L top-3 = **0.11** (best factor 0.17, above its 0.019 null
 but ≪ 0.30), R = **0.025**; restricting to the top-200 high-effect perturbations lifts S only to
 **0.037**, so the floor is *total*, not population-dilution. The machinery is calibrated (it reproduces
 the committed 0.049 pointwise floor and detects the loading whisker). **Honest correction:** raw-space
-S reproducibility is **0.007**, not the ~0.9 a shared-program tautology would suggest — that ~0.9 is
+S reproducibility is **0.007**, not the ~0.9 a shared-program tautology would suggest; that ~0.9 is
 the constant high *baseline* of raw cosines (all perturbations point toward the shared program), not a
 reproducible *pattern*. G-R.2 (known-regulator recovery) was gated on a pass and not run; the build
 (G14) is unlicensed. The frontier's noise floor is **object-general** — pointwise *and* relational, raw
