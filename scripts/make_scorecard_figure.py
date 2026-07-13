@@ -53,7 +53,7 @@ def panel_a(frac):
 HEADER = '''<svg viewBox="0 0 1000 760" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
   <rect x="0" y="0" width="1000" height="760" fill="#ffffff"/>
   <text x="40" y="46" font-size="26" font-weight="700" fill="#12151a">Marson CD4 Perturb-seq — Predictability Scorecard</text>
-  <text x="40" y="72" font-size="14.5" fill="#4a515b">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling. An evaluation/methods reframe of validated content — no new model.</text>
+  <text x="40" y="72" font-size="14" fill="#4a515b">Seven pre-registered probes + the do-operator control, calibrated to the measured reliability ceiling.</text>
   <rect x="40" y="84" width="255" height="22" rx="4" fill="#eef1f5" stroke="#c9d0da"/>
   <text x="49" y="99.5" font-size="12.5" fill="#3b424c">Novelty tier: <tspan font-weight="700">Tier-2</tspan> — a predictability characterization</text>
   <text x="960" y="99.5" font-size="12" fill="#8a8f98" text-anchor="end">reproduced from committed gate CSVs · n=1 dataset (case study)</text>
@@ -97,8 +97,8 @@ FOOTER = '''  <path d="M 484 372 L 484 366 L 633 366 L 633 372" fill="none" stro
     <text x="250" y="700" fill="#2e8b57" font-weight="600">+0.118 condition / +0.162 gene vs the non-causal twin — the one positive</text>
     <rect x="852" y="688" width="108" height="19" rx="9.5" fill="#dcefe4"/><text x="906" y="701.5" text-anchor="middle" fill="#2e8b57" font-weight="700">POSITIVE</text>
   </g>
-  <text x="40" y="736" font-size="13.5" fill="#3b424c">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests: six probes sit at the floor, the one accuracy</text>
-  <text x="40" y="753" font-size="13.5" fill="#3b424c">positive (C2) is <tspan font-weight="700">in-distribution, not causal</tspan>. The C2 anchor proves the nulls mean “no signal,” not “no sensitivity.”</text>
+  <text x="40" y="736" font-size="13.5" fill="#3b424c">Under honest measurement the recoverable signal is far narrower than the genome-scale volume suggests:</text>
+  <text x="40" y="753" font-size="13.5" fill="#3b424c">six probes sit at the floor; the one accuracy positive (C2) is <tspan font-weight="700">in-distribution, not causal</tspan>.</text>
 </svg>'''
 
 
